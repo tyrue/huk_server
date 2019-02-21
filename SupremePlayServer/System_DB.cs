@@ -1,0 +1,285 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using MySql.Data.MySqlClient;
+using System.IO;
+using System.Net;
+using System.Net.Sockets;
+using System.Windows.Forms;
+
+namespace SupremePlayServer
+{
+    class System_DB : UserThread
+    {
+        private string DBInfo = "Server=127.0.0.1;Database=supremeplay;Uid=root;Pwd=abs753951;CharSet=utf8";
+
+        #region 회원가입
+
+        public void Registeration(NetworkStream NS, String data)
+        {
+            try
+            {
+                // resultcode  // 0 : 아이디 없음 1 : 아이디 이미 있음 2 : 닉네임 이미 있음
+                int resultcode = 0;
+                StreamWriter SW = new StreamWriter(NS, Encoding.UTF8);
+                String[] d1;
+
+                using (MySqlConnection conn = new MySqlConnection(DBInfo))
+                {
+                    // get Data
+                    string[] co = { "," };
+                    d1 = splitTag("nickname", data).Split(co, StringSplitOptions.RemoveEmptyEntries);
+                    
+                    // DB Connection
+                    conn.Open();
+                    string sql = "SELECT* FROM user";
+
+                    // Mysql Connection
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    MySqlDataReader rdr = cmd.ExecuteReader();
+                    while (rdr.Read())
+                    {
+                        if (rdr["id"].ToString().Equals(d1[1]))
+                        {
+                            resultcode = 1;
+                            break;
+                        }
+                        if (rdr["nickname"].ToString().Equals(d1[0]))
+                        {
+                            resultcode = 2;
+                            break;
+                        }
+                    }
+                    rdr.Close();
+                    conn.Close();
+                }
+
+                // Send Message To Client
+                if (NS != null)
+                {
+                    // No Exist nickname & id
+                    if (resultcode == 0)
+                    {
+                        using (MySqlConnection conn = new MySqlConnection(DBInfo))
+                        {
+                            // DB Connection
+                            conn.Open();
+
+                            string sql = "INSERT INTO user VALUES('" + d1[0] + "', '" + d1[1] + "', '" + d1[2] + "')";
+                            MySqlCommand cmd = new MySqlCommand(sql, conn);
+                            cmd.ExecuteNonQuery();
+
+                            SW.WriteLine("<reges>success</reges>");
+                        }
+                    }
+
+                    // Already Exist Id
+                    else if (resultcode == 1)
+                        SW.WriteLine("<reges>wu</reges>");
+
+                    // Already Exist nickname
+                    else if (resultcode == 2)
+                        SW.WriteLine("<nick_name>No</nick_name>");
+
+                    SW.Flush();
+                }
+            }
+            catch{}
+        }
+
+        #endregion
+
+
+        #region 로그인
+
+        public String Login(String data)
+        {
+            String UserName = "*null*,*null*";
+
+            try
+            {
+                // resultcode  // 0 : 아이디 잘못 입력 1 : 비번 잘못입력  2 : 로긴 성공
+                int resultcode = 0;
+
+                using (MySqlConnection conn = new MySqlConnection(DBInfo))
+                {
+                    // get Data
+                    String[] co1 = { "<login " };
+                    String[] d1 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
+
+                    String[] dd = d1[0].Split('>');
+
+                    String[] co2 = { "</login" };
+                    String[] ddd = dd[1].Split(co2, StringSplitOptions.RemoveEmptyEntries);
+
+                    // DB Connection
+                    conn.Open();
+                    string sql = "SELECT* FROM user where id = '" + dd[0] + "'";
+
+                    // Mysql Connection
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    MySqlDataReader rdr = cmd.ExecuteReader();
+                    while (rdr.Read())
+                    {
+                        resultcode = 1;
+                        if (rdr["password"].ToString().Equals(ddd[0]))
+                        {
+                            UserName = rdr["nickname"].ToString() + "," + dd[0];
+                            resultcode = 2;
+                            break;
+                        }
+                    }
+                    rdr.Close();
+                    conn.Close();
+                }
+
+                UserName += "," + resultcode;
+            }
+            catch { }
+
+            return UserName;
+        }
+
+        #endregion
+
+
+        #region 유저 데이터 저장
+
+        public void SaveData(String pkdata, String UserId)
+        {
+            pkdata = splitTag("userdata", pkdata);
+            
+            string[] co1 = {"|"};
+            String[] data = pkdata.Split(co1, StringSplitOptions.None);
+            
+            if (data.Length == 29 || UserId.Equals(""))
+                return;
+
+            String query = "'" + UserId + "', '";
+            String k_name = "";
+            String u_query = "";
+
+            
+            try
+            {
+                for (int i = 1; i < data.Length; i++)
+                {
+                    if (data[i].Equals(""))
+                    {
+                        data[i] = "*null*";
+                    }
+
+                    query += data[i];
+
+                    if (i != data.Length - 1)
+                        query += "', '";
+                    else
+                        query += "'";
+                }
+                
+                using (MySqlConnection conn = new MySqlConnection(DBInfo))
+                {
+                    // DB Connection
+                    conn.Open();
+
+                    string sql = "SELECT* FROM userinfo";
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    MySqlDataReader rdr = cmd.ExecuteReader();
+
+                    while (rdr.Read())
+                    {
+                        for (int i = 1; i < rdr.FieldCount; i++)
+                        {
+                            k_name += rdr.GetName(i);
+                            u_query += rdr.GetName(i) + "='" + data[i] + "'";
+                            if (i != rdr.FieldCount - 1)
+                            {
+                                k_name += ", ";
+                                u_query += ", ";
+                            }
+                        }
+                        break;
+                    }
+
+                    conn.Close();
+                }
+
+                using (MySqlConnection conn = new MySqlConnection(DBInfo))
+                {
+                    // DB Connection
+                    conn.Open();
+                    string sql = "";
+                    if(u_query != "")
+                        sql = "INSERT INTO userinfo VALUES(" + query + ") ON DUPLICATE KEY UPDATE " + u_query;
+                    else
+                        sql = "INSERT INTO userinfo VALUES(" + query + ") ON DUPLICATE KEY UPDATE id = ''";
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    cmd.ExecuteNonQuery();
+                    conn.Close();
+                }
+            }
+
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
+            }
+        }
+
+
+
+        #endregion
+
+
+        #region 유저 데이터 전송
+
+        public void SendData(NetworkStream NS, String userid)
+        {
+            try
+            {
+                StreamWriter SW = new StreamWriter(NS, Encoding.UTF8);
+
+                using (MySqlConnection conn = new MySqlConnection(DBInfo))
+                {
+                    // DB Connection
+                    conn.Open();
+
+                    string sql = "SELECT* FROM userinfo where id = '" + userid + "'";
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    MySqlDataReader rdr = cmd.ExecuteReader();
+
+                    while (rdr.Read())
+                    {
+                        for (int i = 0; i < rdr.FieldCount; i++)
+                          SW.WriteLine("<dataload>" + rdr[i].ToString() + "</dataload>");
+                    }
+
+                    SW.Flush();
+                    rdr.Close();
+                    conn.Close();
+                }
+            }
+            catch (Exception e)
+            {
+
+            }
+        }
+
+        #endregion
+
+
+        // Split Tag
+        public String splitTag(String tag, String data)
+        {
+            string[] co1 = { "<" + tag + ">" };
+            String[] d1 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
+
+            string[] co2 = { "</" + tag + ">" };
+            String[] d2 = d1[0].Split(co2, StringSplitOptions.RemoveEmptyEntries);
+
+            return d2[0];
+        }
+
+    }
+}
