@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -84,43 +84,15 @@ namespace SupremePlayServer
                     }
                     catch (Exception e)
                     {
-                        UserList[i].thread.Abort();
-                        UserList.Remove(UserList[i]);
-                        PlayerCount();
+                        removethread(UserList[i].thread);
                     }
                 }
-
                 // 유효하지 않은 유저는 삭제
                 else
                 {
-                    try
-                    {
-                        if (UserList[i].thread != null)
-                            UserList[i].thread.Abort();
-                        UserList.Remove(UserList[i]);
-                        PlayerCount();
-                    }
-                    catch (Exception e) { }
+                    removethread(UserList[i].thread);
                 }
-
-                try
-                {
-                    // 접속이 되지 않은 유저 삭제 : 중간에 팅긴 유저에 대한 처리
-                    if (!UserList[i].client.Connected)
-                    {
-                        if (UserList[i].UserName != null)
-                            Packet("<chat>(알림): '" + UserList[i].UserName + "'님께서 게임을 종료하셨습니다.</chat>");
-
-                        if (UserList[i].thread != null)
-                            UserList[i].thread.Abort();
-                        UserList.Remove(UserList[i]);
-                        PlayerCount();
-                    }
-                }
-                catch (Exception e)
-                {
-
-                }
+                removethread(UserList[i].thread);
             }
 
             PlayerCount();
@@ -144,8 +116,17 @@ namespace SupremePlayServer
         {
             try
             {
-                UserList.Remove(userthread);
-                PlayerCount();
+                // 접속이 되지 않은 유저 삭제 : 중간에 팅긴 유저에 대한 처리
+                if (!userthread.client.Connected)
+                {
+                    if (userthread.UserName != null)
+                        Packet("<chat>(알림): '" + userthread.UserName + "'님께서 게임을 종료하셨습니다.</chat>");
+
+                    if (userthread.thread != null)
+                        userthread.thread.Abort();
+                    UserList.Remove(userthread);
+                    PlayerCount();
+                }
             }
             catch (Exception e)
             {
