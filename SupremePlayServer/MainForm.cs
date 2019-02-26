@@ -84,15 +84,15 @@ namespace SupremePlayServer
                     }
                     catch (Exception e)
                     {
-                        removethread(UserList[i].thread);
+                        removethread(UserList[i]);
                     }
                 }
                 // 유효하지 않은 유저는 삭제
                 else
                 {
-                    removethread(UserList[i].thread);
+                    removethread(UserList[i]);
                 }
-                removethread(UserList[i].thread);
+                removethread(UserList[i]);
             }
 
             PlayerCount();
