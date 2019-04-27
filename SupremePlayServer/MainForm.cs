@@ -43,7 +43,7 @@ namespace SupremePlayServer
 
             try
             {
-                Listener = new TcpListener(Int32.Parse(Properties.Resources.PORT));
+                Listener = new TcpListener(IPAddress.Any, Int32.Parse(Properties.Resources.PORT));
                 Listener.Start(); // Listener 동작 시작
 
                 while (true)
@@ -82,7 +82,7 @@ namespace SupremePlayServer
                         UserList[i].SW.WriteLine(data); // 메시지 보내기
                         UserList[i].SW.Flush();
                     }
-                    catch (Exception e)
+                    catch (Exception e) // 팅긴걸로 판단
                     {
                         removethread(UserList[i]);
                     }
@@ -92,9 +92,7 @@ namespace SupremePlayServer
                 {
                     removethread(UserList[i]);
                 }
-                removethread(UserList[i]);
             }
-
             PlayerCount();
 
             if(data.Contains("<chat1>"))
@@ -117,15 +115,21 @@ namespace SupremePlayServer
             try
             {
                 // 접속이 되지 않은 유저 삭제 : 중간에 팅긴 유저에 대한 처리
-                if (!userthread.client.Connected)
+                if (!userthread.client.Connected) // 접속이 끊겼는데 접속 되어 있다고 처리되서 계속 오류나고 있음
                 {
                     if (userthread.UserName != null)
+                    {
+                        UserList.Remove(userthread); // 여기서 문제인건데...
+                        PlayerCount();
                         Packet("<chat>(알림): '" + userthread.UserName + "'님께서 게임을 종료하셨습니다.</chat>");
+                    }
 
                     if (userthread.thread != null)
+                    {
+                        UserList.Remove(userthread); // 여기서 문제인건데...
+                        PlayerCount();
                         userthread.thread.Abort();
-                    UserList.Remove(userthread);
-                    PlayerCount();
+                    }
                 }
             }
             catch (Exception e)

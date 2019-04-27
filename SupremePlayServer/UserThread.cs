@@ -170,7 +170,13 @@ namespace SupremePlayServer
                             if (!UserCode.Equals("*null*") && system.splitTag("9", GetMessage).Equals(UserCode))
                             {
                                 if (UserName != null)
-                                   mainform.Invoke((MethodInvoker)(() => mainform.Packet("<chat>(알림): '" + UserName + "'님께서 게임을 종료하셨습니다.</chat>")));
+                                {
+                                    SW.Close();
+                                    SR.Close();
+                                    client.Close();
+                                    NS.Close();
+                                    mainform.Invoke((MethodInvoker)(() => mainform.Packet("")));
+                                }
                                 mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage)));
                                 UserCode = "*null*"; 
                             }
