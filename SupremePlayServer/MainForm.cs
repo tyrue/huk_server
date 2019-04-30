@@ -97,7 +97,7 @@ namespace SupremePlayServer
 
             if(data.Contains("<chat1>"))
             {
-                if (listBox2.Items.Count <= 300)
+                if (listBox2.Items.Count <= 300) // 서버 채팅 메세지 목록 개수 제한
                 {
                     string[] word = splitTag("chat1", data).Split(',');
                     listBox2.Items.Add(word[0]);
@@ -119,7 +119,7 @@ namespace SupremePlayServer
                 {
                     if (userthread.UserName != null)
                     {
-                        UserList.Remove(userthread); // 여기서 문제인건데...
+                        UserList.Remove(userthread); 
                         PlayerCount();
                         Packet("<chat>(알림): '" + userthread.UserName + "'님께서 게임을 종료하셨습니다.</chat>");
                     }

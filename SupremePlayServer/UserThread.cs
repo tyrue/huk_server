@@ -67,7 +67,7 @@ namespace SupremePlayServer
                             mainform.label1.Invoke((MethodInvoker)(() => mainform.label1.Text += GetMessage + "\n"));
                          * */
 
-                        // Authorization
+                        // Authorization 인증
                         if (GetMessage.Contains("<0>"))
                         {
                             SW.WriteLine("<0 " + UserCode + ">'e' n=Suprememay Server</0>"); // 메시지 보내기
