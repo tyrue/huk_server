@@ -79,6 +79,7 @@ namespace SupremePlayServer
                 {
                     try
                     {
+                        //MessageBox.Show(data);
                         UserList[i].SW.WriteLine(data); // 메시지 보내기
                         UserList[i].SW.Flush();
                     }

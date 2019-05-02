@@ -12,16 +12,17 @@ namespace SupremePlayServer
         {
             List<String> plist = new List<string>();
 
-            plist.Add("<chat1>");
-            plist.Add("<bigsay>");
-            plist.Add("<23>");
-            plist.Add("<27>");
-            plist.Add("<partyhill>");
-            plist.Add("<Drop>");
-            plist.Add("<drop_create>");
-            plist.Add("<drop_del>");
-            plist.Add("<Guild_Message>");
-            plist.Add("<party>");
+            plist.Add("<chat>");    // 공지
+            plist.Add("<chat1>");   // 일반 채팅
+            plist.Add("<bigsay>");  // 외치기
+            plist.Add("<23>");      // 셀프 스위치
+            plist.Add("<27>");      // 
+            plist.Add("<partyhill>"); // 파티 힐
+            plist.Add("<Drop>");    // 버리기
+            plist.Add("<drop_create>"); // 템 드랍
+            plist.Add("<drop_del>");    // 템 삭제
+            plist.Add("<Guild_Message>"); // 길드 메시지
+            plist.Add("<party>");   // 파티
             plist.Add("<summon>");
             plist.Add("<all_summon>");
             plist.Add("<prison>");
@@ -51,7 +52,10 @@ namespace SupremePlayServer
             plist.Add("<nptout>");
             plist.Add("<nptgain>");
             plist.Add("<cashgive>");
-
+            plist.Add("<switches>"); // 스위치 공유
+            plist.Add("<variables>"); // 변수 공유
+            plist.Add("<enemy_dead>"); // 몹 죽음 공유
+            plist.Add("<respawn>"); // 몹 죽음 공유
             return plist;
         }
     }

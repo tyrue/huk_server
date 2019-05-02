@@ -132,6 +132,7 @@ namespace SupremePlayServer
                             SW.Flush();
                         }
 
+                        // 유저 데이터 저장
                         else if (GetMessage.Contains("<userdata>"))
                         {
                             System_DB system_db = new System_DB();
@@ -148,7 +149,8 @@ namespace SupremePlayServer
 
                             }
                         }
-
+                        
+                        // 모든 유저에게 보내는 데이터
                         else if (GetMessage.Contains("<5>"))
                         {
                             string[] co1 = { "<5>" };
@@ -156,12 +158,12 @@ namespace SupremePlayServer
 
                             mainform.Invoke((MethodInvoker)(() => mainform.Packet("<5 " + UserCode + ">" + d1[0])));
                         }
+                      
 
                         else if (GetMessage.Contains("<dtloadreq>"))
                         {
                             System_DB system_db = new System_DB();
                             system_db.SendData(NS, UserId);
-                            mainform.Invoke((MethodInvoker)(() => mainform.Packet("<chat>(알림): '" + UserName + "'님께서 흑부엉의 바람의나라 온라인에 접속 하셨습니다.</chat>")));
                         }
 
                         else if (GetMessage.Contains("<9>"))
@@ -183,6 +185,7 @@ namespace SupremePlayServer
 
                         }
 
+                        // 나머지는 다 방송함
                         else if (!GetMessage.Equals("null"))
                         {
                             string[] co1 = { ">" };
