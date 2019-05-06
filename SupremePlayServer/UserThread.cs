@@ -160,13 +160,14 @@ namespace SupremePlayServer
                             mainform.Invoke((MethodInvoker)(() => mainform.Packet("<5 " + UserCode + ">" + d1[0])));
                         }
                       
-
+                        // 유저 데이터 로드
                         else if (GetMessage.Contains("<dtloadreq>"))
                         {
                             System_DB system_db = new System_DB();
                             system_db.SendData(NS, UserId);
                         }
 
+                        // 유저 종료
                         else if (GetMessage.Contains("<9>"))
                         {
                             System_DB system = new System_DB();

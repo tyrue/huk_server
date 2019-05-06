@@ -64,7 +64,7 @@ namespace SupremePlayServer
             }
             finally
             {
-                
+
             }
         }
 
@@ -96,7 +96,7 @@ namespace SupremePlayServer
             }
             PlayerCount();
 
-            if(data.Contains("<chat1>"))
+            if (data.Contains("<chat1>"))
             {
                 if (listBox2.Items.Count <= 300) // 서버 채팅 메세지 목록 개수 제한
                 {
@@ -106,7 +106,9 @@ namespace SupremePlayServer
                     listBox2.TopIndex = Math.Max(listBox2.Items.Count - visibleItems + 1, 0);
                 }
                 else
+                {
                     listBox2.Items.Clear();
+                }
             }
         }
 
@@ -120,7 +122,7 @@ namespace SupremePlayServer
                 {
                     if (userthread.UserName != null)
                     {
-                        UserList.Remove(userthread); 
+                        UserList.Remove(userthread);
                         PlayerCount();
                         Packet("<chat>(알림): '" + userthread.UserName + "'님께서 게임을 종료하셨습니다.</chat>");
                     }
@@ -173,7 +175,7 @@ namespace SupremePlayServer
             label_playercount.Text = "접속자 수 : " + UserList.Count;
 
             listBox1.Items.Clear();
-            for(int i=0; i< UserList.Count; i++)
+            for (int i = 0; i < UserList.Count; i++)
             {
                 listBox1.Items.Add(UserList[i].UserName + "(" + UserList[i].UserId + ")");
             }
@@ -194,51 +196,58 @@ namespace SupremePlayServer
         // 공지 보내기
         private void button1_Click(object sender, EventArgs e)
         {
-            if (!textBox1.Text.Equals(""))
+            if (comboBox1.SelectedIndex == 0) // 공지
             {
-                if(comboBox1.SelectedIndex == 0) // 공지
+                if (!textBox1.Text.Equals(""))
                 {
                     Packet("<chat>" + textBox1.Text + "</chat>");
                     listBox2.Items.Add(textBox1.Text);
                     textBox1.Text = "";
                 }
-                else if (comboBox1.SelectedIndex == 1) // 감옥
+            }
+            else if (comboBox1.SelectedIndex == 1) // 감옥
+            {
+                if (listBox1.SelectedIndex >= 0)
                 {
-                    if(listBox1.SelectedIndex >= 0)
-                    {
-                        MessageBox.Show(listBox1.Items[listBox1.SelectedIndex].ToString());
-                        Packet("<prison>" + listBox1.Items[listBox1.SelectedIndex] + "</prison>");
-                        listBox2.Items.Add(listBox1.Items[listBox1.SelectedIndex] + " 감옥");
-                        textBox1.Text = "";
-                    }
-                }
-                else if (comboBox1.SelectedIndex == 2) // 석방
-                {
-                    if (listBox1.SelectedIndex >= 0)
-                    {
-                        MessageBox.Show(listBox1.Items[listBox1.SelectedIndex].ToString());
-                        Packet("<emancipation>" + listBox1.Items[listBox1.SelectedIndex] + "</emancipation>");
-                        listBox2.Items.Add(listBox1.Items[listBox1.SelectedIndex] + " 석방");
-                        textBox1.Text = "";
-                    }
-                }
-                else if (comboBox1.SelectedIndex == 3) // 유저 강퇴
-                {
-                    if (listBox1.SelectedIndex >= 0)
-                    {
-                        MessageBox.Show(listBox1.Items[listBox1.SelectedIndex].ToString());
-                        Packet("<ki>" + listBox1.Items[listBox1.SelectedIndex] + "," + textBox1.Text + ",</ki>");
-                        listBox2.Items.Add(textBox1.Text);
-                        textBox1.Text = "";
-                    }
-                }
-                else if (comboBox1.SelectedIndex == 4) // 모두 강퇴
-                {
-                    Packet("<ki>모두," + textBox1.Text + ",</ki>");
-                    listBox2.Items.Add(textBox1.Text);
+                    string name = UserList[listBox1.SelectedIndex].UserName;
+                    MessageBox.Show(name);
+                    Packet("<prison>" + name + "</prison>");
+                    listBox2.Items.Add(name + " 감옥");
                     textBox1.Text = "";
                 }
             }
+            else if (comboBox1.SelectedIndex == 2) // 석방
+            {
+                if (listBox1.SelectedIndex >= 0)
+                {
+                    string name = UserList[listBox1.SelectedIndex].UserName;
+                    MessageBox.Show(name);
+                    Packet("<emancipation>" + name + "</emancipation>");
+                    listBox2.Items.Add(name + " 석방");
+                    textBox1.Text = "";
+                }
+            }
+            else if (comboBox1.SelectedIndex == 3) // 유저 강퇴
+            {
+                if (listBox1.SelectedIndex >= 0 && !textBox1.Text.Equals(""))
+                {
+                    string name = UserList[listBox1.SelectedIndex].UserName;
+                    MessageBox.Show(name);
+                    Packet("<ki>" + name + "," + textBox1.Text + ",</ki>");
+                    Packet("<chat>" + name + "님이 강퇴 당하셨습니다." + "</chat>");
+                    listBox2.Items.Add(name + "강퇴");
+                    textBox1.Text = "";
+                }
+            }
+            else if (comboBox1.SelectedIndex == 4) // 모두 강퇴
+            {
+                Packet("<ki>모두," + textBox1.Text + ",</ki>");
+                listBox2.Items.Add(textBox1.Text);
+                textBox1.Text = "";
+            }
+            // 자동 스크롤
+            int visibleItems = listBox2.ClientSize.Height / listBox2.ItemHeight;
+            listBox2.TopIndex = Math.Max(listBox2.Items.Count - visibleItems + 1, 0);
         }
 
         private void ComboBox1_SelectedIndexChanged(object sender, EventArgs e)
