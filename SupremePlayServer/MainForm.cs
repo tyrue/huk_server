@@ -79,7 +79,7 @@ namespace SupremePlayServer
                 {
                     try
                     {
-                        //MessageBox.Show(data);
+                        MessageBox.Show(data);
                         UserList[i].SW.WriteLine(data); // 메시지 보내기
                         UserList[i].SW.Flush();
                     }
@@ -163,7 +163,9 @@ namespace SupremePlayServer
 
         private void FormClose(object sender, FormClosedEventArgs e)
         {
-
+            Application.ExitThread();
+            Environment.Exit(0);
+            System.Diagnostics.Process.GetCurrentProcess().Kill();
         }
 
         private void PlayerCount()
@@ -194,10 +196,53 @@ namespace SupremePlayServer
         {
             if (!textBox1.Text.Equals(""))
             {
-                Packet("<chat>" + textBox1.Text + "</chat>");
-                listBox2.Items.Add(textBox1.Text);
-                textBox1.Text = "";
+                if(comboBox1.SelectedIndex == 0) // 공지
+                {
+                    Packet("<chat>" + textBox1.Text + "</chat>");
+                    listBox2.Items.Add(textBox1.Text);
+                    textBox1.Text = "";
+                }
+                else if (comboBox1.SelectedIndex == 1) // 감옥
+                {
+                    if(listBox1.SelectedIndex >= 0)
+                    {
+                        MessageBox.Show(listBox1.Items[listBox1.SelectedIndex].ToString());
+                        Packet("<prison>" + listBox1.Items[listBox1.SelectedIndex] + "</prison>");
+                        listBox2.Items.Add(listBox1.Items[listBox1.SelectedIndex] + " 감옥");
+                        textBox1.Text = "";
+                    }
+                }
+                else if (comboBox1.SelectedIndex == 2) // 석방
+                {
+                    if (listBox1.SelectedIndex >= 0)
+                    {
+                        MessageBox.Show(listBox1.Items[listBox1.SelectedIndex].ToString());
+                        Packet("<emancipation>" + listBox1.Items[listBox1.SelectedIndex] + "</emancipation>");
+                        listBox2.Items.Add(listBox1.Items[listBox1.SelectedIndex] + " 석방");
+                        textBox1.Text = "";
+                    }
+                }
+                else if (comboBox1.SelectedIndex == 3) // 유저 강퇴
+                {
+                    if (listBox1.SelectedIndex >= 0)
+                    {
+                        MessageBox.Show(listBox1.Items[listBox1.SelectedIndex].ToString());
+                        Packet("<ki>" + listBox1.Items[listBox1.SelectedIndex] + "," + textBox1.Text + ",</ki>");
+                        listBox2.Items.Add(textBox1.Text);
+                        textBox1.Text = "";
+                    }
+                }
+                else if (comboBox1.SelectedIndex == 4) // 모두 강퇴
+                {
+                    Packet("<ki>모두," + textBox1.Text + ",</ki>");
+                    listBox2.Items.Add(textBox1.Text);
+                    textBox1.Text = "";
+                }
             }
+        }
+
+        private void ComboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
         }
     }
 

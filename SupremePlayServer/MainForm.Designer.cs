@@ -125,12 +125,15 @@
             this.comboBox1.FormattingEnabled = true;
             this.comboBox1.Items.AddRange(new object[] {
             "공지",
-            "소환",
-            "강퇴"});
+            "감옥",
+            "석방",
+            "유저 강퇴",
+            "모두 강퇴(리붓)"});
             this.comboBox1.Location = new System.Drawing.Point(512, 118);
             this.comboBox1.Name = "comboBox1";
             this.comboBox1.Size = new System.Drawing.Size(87, 23);
             this.comboBox1.TabIndex = 10;
+            this.comboBox1.SelectedIndexChanged += new System.EventHandler(this.ComboBox1_SelectedIndexChanged);
             // 
             // MainForm
             // 

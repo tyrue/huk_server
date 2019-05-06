@@ -25,7 +25,7 @@ namespace SupremePlayServer
             plist.Add("<party>");   // 파티
             plist.Add("<summon>");
             plist.Add("<all_summon>");
-            plist.Add("<prison>");
+            plist.Add("<prison>");  // 감옥
             plist.Add("<partymessage>");
             plist.Add("<whispers>");
             plist.Add("<party_no>");
@@ -55,7 +55,8 @@ namespace SupremePlayServer
             plist.Add("<switches>"); // 스위치 공유
             plist.Add("<variables>"); // 변수 공유
             plist.Add("<enemy_dead>"); // 몹 죽음 공유
-            plist.Add("<respawn>"); // 몹 죽음 공유
+            plist.Add("<respawn>"); // 몹 부활 공유
+            plist.Add("<8>"); // 유저 죽음 알림
             return plist;
         }
     }

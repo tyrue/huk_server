@@ -41,6 +41,7 @@ namespace SupremePlayServer
             // Create Client Socket & Thread
             client = clientSocket;
             thread = new Thread(NetListener);
+            thread.IsBackground = true;
             thread.Start();
         }
 
@@ -180,9 +181,8 @@ namespace SupremePlayServer
                                     mainform.Invoke((MethodInvoker)(() => mainform.Packet("")));
                                 }
                                 mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage)));
-                                UserCode = "*null*"; 
+                                UserCode = "*null*";
                             }
-
                         }
 
                         // 나머지는 다 방송함
