@@ -125,18 +125,17 @@ namespace SupremePlayServer
                 // 접속이 되지 않은 유저 삭제 : 중간에 팅긴 유저에 대한 처리
                 if (!userthread.client.Connected) // 접속이 끊겼는데 접속 되어 있다고 처리되서 계속 오류나고 있음
                 {
+                    //Packet("<chat>(알림): '" + userthread.UserName + "'님께서 게임을 종료하셨습니다.</chat>");
                     if (userthread.UserName != null)
                     {
                         UserList.Remove(userthread);
                         PlayerCount();
-                        Packet("<chat>(알림): '" + userthread.UserName + "'님께서 게임을 종료하셨습니다.</chat>");
                     }
 
                     if (userthread.thread != null)
                     {
                         UserList.Remove(userthread); // 여기서 문제인건데...
                         PlayerCount();
-                        Packet("<chat>(알림): '" + userthread.UserName + "'님께서 게임을 종료하셨습니다.</chat>");
                         userthread.thread.Abort();
                     }
                 }
@@ -258,6 +257,19 @@ namespace SupremePlayServer
 
         private void ComboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
+        }
+
+        private void TextBox1_TextChanged(object sender, EventArgs e)
+        {
+            
+        }
+        
+        private void message_keyDown(object sender, KeyPressEventArgs e)
+        {
+            if (e.KeyChar == '\r')
+            {
+                this.button1_Click(sender, e);
+            }
         }
     }
 

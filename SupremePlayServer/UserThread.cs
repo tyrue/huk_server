@@ -193,6 +193,7 @@ namespace SupremePlayServer
                                     SR.Close();
                                     client.Close();
                                     NS.Close();
+                                    mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage)));
                                 }
                                 UserCode = "*null*";
                             }
