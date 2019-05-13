@@ -21,6 +21,11 @@ namespace SupremePlayServer
         public MainForm()
         {
             InitializeComponent();
+            // 처음에 공지로 미리 선택됨
+            if(comboBox1.SelectedIndex < 0)
+            {
+                comboBox1.SelectedIndex = 0;
+            }
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -79,7 +84,7 @@ namespace SupremePlayServer
                 {
                     try
                     {
-                        MessageBox.Show(data);
+                        //MessageBox.Show(data);
                         UserList[i].SW.WriteLine(data); // 메시지 보내기
                         UserList[i].SW.Flush();
                     }
@@ -131,6 +136,7 @@ namespace SupremePlayServer
                     {
                         UserList.Remove(userthread); // 여기서 문제인건데...
                         PlayerCount();
+                        Packet("<chat>(알림): '" + userthread.UserName + "'님께서 게임을 종료하셨습니다.</chat>");
                         userthread.thread.Abort();
                     }
                 }

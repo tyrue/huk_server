@@ -59,7 +59,6 @@ namespace SupremePlayServer
                 {
                     while (client.Connected) //클라이언트 메시지받기
                     {
-                        String Data = "";
                         GetMessage = SR.ReadLine();
 
                         // Log
@@ -167,6 +166,20 @@ namespace SupremePlayServer
                             system_db.SendData(NS, UserId);
                         }
 
+                        // 몬스터 데이터 저장
+                        else if (GetMessage.Contains("<monster>"))
+                        {
+                            System_DB system_db = new System_DB();
+                            system_db.SaveMonster(GetMessage);
+                        }
+
+                        // 몬스터 데이터 로드
+                        else if (GetMessage.Contains("<req_monster>"))
+                        {
+                            System_DB system_db = new System_DB();
+                            system_db.SendMonster(GetMessage);
+                        }
+
                         // 유저 종료
                         else if (GetMessage.Contains("<9>"))
                         {
@@ -175,13 +188,12 @@ namespace SupremePlayServer
                             {
                                 if (UserName != null)
                                 {
+                                    mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage)));
                                     SW.Close();
                                     SR.Close();
                                     client.Close();
                                     NS.Close();
-                                    mainform.Invoke((MethodInvoker)(() => mainform.Packet("")));
                                 }
-                                mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage)));
                                 UserCode = "*null*";
                             }
                         }

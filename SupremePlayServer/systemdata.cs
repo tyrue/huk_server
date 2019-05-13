@@ -15,7 +15,7 @@ namespace SupremePlayServer
             plist.Add("<chat>");    // 공지
             plist.Add("<chat1>");   // 일반 채팅
             plist.Add("<bigsay>");  // 외치기
-            plist.Add("<23>");      // 셀프 스위치
+            plist.Add("<23>");      // 몹 정보 공유
             plist.Add("<27>");      // 
             plist.Add("<partyhill>"); // 파티 힐
             plist.Add("<Drop>");    // 버리기

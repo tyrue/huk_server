@@ -265,10 +265,123 @@ namespace SupremePlayServer
 
             }
         }
-
         #endregion
 
+        #region 몬스터 데이터 저장
+        public void SaveMonster(String pkdata)
+        {
+            pkdata = splitTag("monster", pkdata);
 
+            string[] co1 = { "," };
+            String[] data = pkdata.Split(co1, StringSplitOptions.None);
+
+            String query = "'" + UserId + "', '";
+            String k_name = "";
+            String u_query = "";
+
+
+            try
+            {
+                for (int i = 0; i < data.Length; i++)
+                {
+                    if (data[i].Equals(""))
+                    {
+                        data[i] = "nil";
+                    }
+
+                    query += data[i];
+
+                    if (i != data.Length - 1)
+                        query += "', '";
+                    else
+                        query += "'";
+                }
+
+                using (MySqlConnection conn = new MySqlConnection(DBInfo))
+                {
+                    // DB Connection
+                    conn.Open();
+
+                    string sql = "SELECT* FROM monster";
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    MySqlDataReader rdr = cmd.ExecuteReader();
+
+                    while (rdr.Read())
+                    {
+                        for (int i = 0; i < rdr.FieldCount; i++)
+                        {
+                            k_name += rdr.GetName(i);
+                            u_query += rdr.GetName(i) + "='" + data[i] + "'";
+                            if (i != rdr.FieldCount - 1)
+                            {
+                                k_name += ", ";
+                                u_query += ", ";
+                            }
+                        }
+                        break;
+                    }
+
+                    conn.Close();
+                }
+
+                using (MySqlConnection conn = new MySqlConnection(DBInfo))
+                {
+                    // DB Connection
+                    conn.Open();
+                    string sql = "";
+                    if (u_query != "")
+                        sql = "INSERT INTO monster VALUES(" + query + ")" + u_query;
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    cmd.ExecuteNonQuery();
+                    conn.Close();
+                }
+            }
+
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
+            }
+        }
+        #endregion
+
+        #region 몬스터 데이터 전송
+
+        // 해당 맵의 몬스터 정보를 요청함
+        public void SendMonster(String pkdata)
+        {
+            pkdata = splitTag("req_monster", pkdata); // mapid를 추출함
+
+            try
+            {
+                using (MySqlConnection conn = new MySqlConnection(DBInfo))
+                {
+                    // DB Connection
+                    conn.Open();
+
+                    string sql = "SELECT* FROM monster where mapid = '" + pkdata + "'";
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    MySqlDataReader rdr = cmd.ExecuteReader();
+
+                    while (rdr.Read())
+                    {
+                        string data = "<23>";
+                        for (int i = 0; i < rdr.FieldCount; i++)
+                            data += rdr[i].ToString() + ",";
+                        data += "</23>";
+                        mainform.Invoke((MethodInvoker)(() => mainform.Packet(data)));
+                    }
+                    rdr.Close();
+                    conn.Close();
+                }
+            }
+            catch (Exception e)
+            {
+
+            }
+        }
+        #endregion
+
+        #region 태그 나누기
         // Split Tag
         public String splitTag(String tag, String data)
         {
@@ -280,6 +393,6 @@ namespace SupremePlayServer
 
             return d2[0];
         }
-
+        #endregion
     }
 }
