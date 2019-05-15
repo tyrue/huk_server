@@ -1,13 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -25,6 +18,7 @@ namespace SupremePlayServer
             if(comboBox1.SelectedIndex < 0)
             {
                 comboBox1.SelectedIndex = 0;
+                radioButton1.Select();
             }
         }
 
@@ -74,7 +68,6 @@ namespace SupremePlayServer
         }
 
         #endregion
-
         // 모든 유저에게 전송하는 패킷
         public void Packet(String data)
         {
@@ -198,6 +191,27 @@ namespace SupremePlayServer
             return d2[0];
         }
 
+        public int radioSelected()
+        {
+            if(radioButton1.Checked)
+            {
+                return 0; // 경험치 이벤 없음
+            }
+            else if (radioButton2.Checked)
+            {
+                return 2; // 경험치 2배
+            }
+            else if (radioButton3.Checked)
+            {
+                return 3; // 경험치 3배
+            }
+            else if (radioButton4.Checked)
+            {
+                return 5; // 경험치 5배
+            }
+            return 0;
+        }
+
         // 공지 보내기
         private void button1_Click(object sender, EventArgs e)
         {
@@ -215,7 +229,6 @@ namespace SupremePlayServer
                 if (listBox1.SelectedIndex >= 0)
                 {
                     string name = UserList[listBox1.SelectedIndex].UserName;
-                    MessageBox.Show(name);
                     Packet("<prison>" + name + "</prison>");
                     listBox2.Items.Add(name + " 감옥");
                     textBox1.Text = "";
@@ -226,7 +239,6 @@ namespace SupremePlayServer
                 if (listBox1.SelectedIndex >= 0)
                 {
                     string name = UserList[listBox1.SelectedIndex].UserName;
-                    MessageBox.Show(name);
                     Packet("<emancipation>" + name + "</emancipation>");
                     listBox2.Items.Add(name + " 석방");
                     textBox1.Text = "";
@@ -237,7 +249,6 @@ namespace SupremePlayServer
                 if (listBox1.SelectedIndex >= 0 && !textBox1.Text.Equals(""))
                 {
                     string name = UserList[listBox1.SelectedIndex].UserName;
-                    MessageBox.Show(name);
                     Packet("<ki>" + name + "," + textBox1.Text + ",</ki>");
                     Packet("<chat>" + name + "님이 강퇴 당하셨습니다." + "</chat>");
                     listBox2.Items.Add(name + "강퇴");
@@ -269,6 +280,38 @@ namespace SupremePlayServer
             if (e.KeyChar == '\r')
             {
                 this.button1_Click(sender, e);
+            }
+        }
+
+        private void RadioButton1_CheckedChanged(object sender, EventArgs e)
+        {
+            if (radioButton1.Checked == true && UserList != null)
+            {
+                Packet("<exp_event> 0 </exp_event>");
+            }
+        }
+
+        private void RadioButton2_CheckedChanged(object sender, EventArgs e)
+        {
+            if (radioButton2.Checked == true && UserList != null)
+            {
+                Packet("<exp_event> 2 </exp_event>");
+            }
+        }
+
+        private void RadioButton3_CheckedChanged(object sender, EventArgs e)
+        {
+            if (radioButton3.Checked == true && UserList != null)
+            {
+                Packet("<exp_event> 3 </exp_event>");
+            }
+        }
+
+        private void RadioButton4_CheckedChanged(object sender, EventArgs e)
+        {
+            if (radioButton4.Checked == true && UserList != null)
+            {
+                Packet("<exp_event> 5 </exp_event>");
             }
         }
     }

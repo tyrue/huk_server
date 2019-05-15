@@ -149,8 +149,15 @@ namespace SupremePlayServer
 
                             }
                         }
-                        
-                        // 모든 유저에게 보내는 데이터
+
+                        // 경험치 이벤트 확인
+                        else if (GetMessage.Contains("<exp_event>"))
+                        { 
+                            SW.WriteLine("<exp_event>" + mainform.radioSelected().ToString() + "</exp_event>");
+                            SW.Flush();
+                        }
+
+                        // 현재 유저의 정보를 모든 유저에게 보냄
                         else if (GetMessage.Contains("<5>"))
                         {
                             string[] co1 = { "<5>" };
