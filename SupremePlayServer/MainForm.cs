@@ -20,6 +20,39 @@ namespace SupremePlayServer
                 comboBox1.SelectedIndex = 0;
                 radioButton1.Select();
             }
+
+            // 타이머 생성 및 시작
+            System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
+            timer.Interval = 1000;
+            timer.Tick += new EventHandler(timer_tick);
+            timer.Start();
+        }
+
+        void timer_tick(object sender, EventArgs e)
+        {
+            try
+            {
+                DateTime time = System.DateTime.Now;
+                label3.Text = "현재 시간 : " + time.ToString("HH-mm-ss");
+                // 만약 정시 되기 10분 전이면? 배 열림
+                if(int.Parse(time.ToString("mm")) > 50)
+                {
+                    // 배 탈 수 있는 스위치 보냄
+
+                }
+                else if(int.Parse(time.ToString("mm")) > 1) // 운행한지 1분 후라면? 배 내릴 수 있음
+                {
+
+                }
+                else // 배 운행중..
+                {
+
+                }
+            }
+            catch
+            {
+
+            }
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -30,6 +63,8 @@ namespace SupremePlayServer
             // Listen New User Connection
             Thread echo_thread = new Thread(Thread_NetWorkListening);
             echo_thread.Start();
+
+
         }
 
         #region Mulit-Thread Tcp/Ip Network
@@ -170,7 +205,7 @@ namespace SupremePlayServer
 
         private void PlayerCount()
         {
-            label_playercount.Text = "접속자 수 : " + UserList.Count;
+            toolStripStatusLabel2.Text = "접속자 수 : " + UserList.Count;
 
             listBox1.Items.Clear();
             for (int i = 0; i < UserList.Count; i++)
@@ -314,6 +349,10 @@ namespace SupremePlayServer
                 Packet("<exp_event> 5 </exp_event>");
             }
         }
-    }
 
+        private void shipTime()
+        {
+
+        }
+    }
 }

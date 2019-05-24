@@ -275,11 +275,8 @@ namespace SupremePlayServer
             string[] co1 = { "," };
             String[] data = pkdata.Split(co1, StringSplitOptions.None);
 
-            String query = "'" + UserId + "', '";
-            String k_name = "";
+            String query = "'";
             String u_query = "";
-
-
             try
             {
                 for (int i = 0; i < data.Length; i++)
@@ -310,11 +307,10 @@ namespace SupremePlayServer
                     {
                         for (int i = 0; i < rdr.FieldCount; i++)
                         {
-                            k_name += rdr.GetName(i);
+                            // 필드 이름 받아옴
                             u_query += rdr.GetName(i) + "='" + data[i] + "'";
                             if (i != rdr.FieldCount - 1)
                             {
-                                k_name += ", ";
                                 u_query += ", ";
                             }
                         }
@@ -329,8 +325,14 @@ namespace SupremePlayServer
                     // DB Connection
                     conn.Open();
                     string sql = "";
-                    if (u_query != "")
-                        sql = "INSERT INTO monster VALUES(" + query + ")" + u_query;
+                    if (u_query != "") // DB에 해당 맵의 이벤트가 없다면 새로 추가
+                    {
+                        sql = "INSERT INTO monster VALUES(" + query + ") ON DUPLICATE KEY UPDATE " + u_query;
+                    }
+                    else
+                    {
+                        sql = "INSERT INTO monster VALUES(" + query + ")";
+                    }
                     MySqlCommand cmd = new MySqlCommand(sql, conn);
                     cmd.ExecuteNonQuery();
                     conn.Close();
@@ -346,9 +348,10 @@ namespace SupremePlayServer
 
         #region 몬스터 데이터 전송
 
-        // 해당 맵의 몬스터 정보를 요청함
-        public void SendMonster(String pkdata)
+        // 해당 맵의 몬스터 정보를 요청함 처음에만?
+        public void SendMonster(NetworkStream NS, String pkdata)
         {
+            StreamWriter SW = new StreamWriter(NS, Encoding.UTF8);
             pkdata = splitTag("req_monster", pkdata); // mapid를 추출함
 
             try
@@ -368,19 +371,24 @@ namespace SupremePlayServer
                         for (int i = 0; i < rdr.FieldCount; i++)
                             data += rdr[i].ToString() + ",";
                         data += "</23>";
-                        mainform.Invoke((MethodInvoker)(() => mainform.Packet(data)));
+                        SW.WriteLine(data); // 해당 유저에게만 보냄 지금 여기서 문제;
                     }
+                    SW.Flush();
                     rdr.Close();
                     conn.Close();
                 }
             }
             catch (Exception e)
             {
-
+                MessageBox.Show(e.Message);
             }
         }
         #endregion
 
+        public void respawnMonster()
+        {
+
+        }
         #region 태그 나누기
         // Split Tag
         public String splitTag(String tag, String data)

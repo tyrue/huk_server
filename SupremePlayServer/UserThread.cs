@@ -176,6 +176,7 @@ namespace SupremePlayServer
                         // 몬스터 데이터 저장
                         else if (GetMessage.Contains("<monster>"))
                         {
+                            //MessageBox.Show("몬스터 정보 저장");
                             System_DB system_db = new System_DB();
                             system_db.SaveMonster(GetMessage);
                         }
@@ -183,8 +184,9 @@ namespace SupremePlayServer
                         // 몬스터 데이터 로드
                         else if (GetMessage.Contains("<req_monster>"))
                         {
+                            //MessageBox.Show("몬스터 정보 요청");
                             System_DB system_db = new System_DB();
-                            system_db.SendMonster(GetMessage);
+                            system_db.SendMonster(NS, GetMessage);
                         }
 
                         // 유저 종료
