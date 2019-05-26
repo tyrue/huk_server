@@ -32,6 +32,10 @@ namespace SupremePlayServer
         {
             try
             {
+                // 몬스터 db에서 체력 0인 몹의 리젠 시간을 300씩 줄인다.
+                System_DB system_db = new System_DB();
+                system_db.respawnMonster();
+
                 DateTime time = System.DateTime.Now;
                 label3.Text = "현재 시간 : " + time.ToString("HH-mm-ss");
                 // 만약 정시 되기 10분 전이면? 배 열림

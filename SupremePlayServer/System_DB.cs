@@ -385,10 +385,35 @@ namespace SupremePlayServer
         }
         #endregion
 
+        #region 몬스터 젠 시간 1초마다 갱신
         public void respawnMonster()
         {
+            using (MySqlConnection conn = new MySqlConnection(DBInfo))
+            {
+                // DB Connection
+                conn.Open();
+                try
+                {
+                    string sql = "UPDATE monster SET delay = delay - 150 WHERE hp = 0 AND delay > 0";
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    MySqlDataReader rdr = cmd.ExecuteReader();
+                    conn.Close();
 
+                    conn.Open();
+                    sql = "UPDATE monster SET delay = 0 WHERE delay < 0";
+                    cmd = new MySqlCommand(sql, conn);
+                    rdr = cmd.ExecuteReader();
+                    conn.Close();
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.Message);
+                    conn.Close();
+                }
+            }
         }
+        #endregion
+
         #region 태그 나누기
         // Split Tag
         public String splitTag(String tag, String data)
