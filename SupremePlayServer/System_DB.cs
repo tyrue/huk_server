@@ -223,7 +223,7 @@ namespace SupremePlayServer
 
             catch (Exception e)
             {
-                MessageBox.Show(e.Message);
+                //MessageBox.Show(e.Message);
             }
         }
 
@@ -341,7 +341,7 @@ namespace SupremePlayServer
 
             catch (Exception e)
             {
-                MessageBox.Show(e.Message);
+               // MessageBox.Show(e.Message);
             }
         }
         #endregion
@@ -380,7 +380,7 @@ namespace SupremePlayServer
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.Message);
+                //MessageBox.Show(e.Message);
             }
         }
         #endregion
@@ -394,7 +394,7 @@ namespace SupremePlayServer
                 conn.Open();
                 try
                 {
-                    string sql = "UPDATE monster SET delay = delay - 150 WHERE hp = 0 AND delay > 0";
+                    string sql = "UPDATE monster SET delay = delay - 60 WHERE hp = 0 AND delay > 0";
                     MySqlCommand cmd = new MySqlCommand(sql, conn);
                     MySqlDataReader rdr = cmd.ExecuteReader();
                     conn.Close();

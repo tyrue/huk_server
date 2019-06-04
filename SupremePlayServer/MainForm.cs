@@ -23,9 +23,13 @@ namespace SupremePlayServer
 
             // 타이머 생성 및 시작
             System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
-            timer.Interval = 1000;
+            System.Windows.Forms.Timer timer2 = new System.Windows.Forms.Timer();
+            timer.Interval = 1000; // 몹 리젠 시간
+            timer2.Interval = 500; // 몹 정보 보냄
             timer.Tick += new EventHandler(timer_tick);
+            timer2.Tick += new EventHandler(timer_tick2);
             timer.Start();
+            timer2.Start();
         }
 
         void timer_tick(object sender, EventArgs e)
@@ -35,23 +39,17 @@ namespace SupremePlayServer
                 // 몬스터 db에서 체력 0인 몹의 리젠 시간을 300씩 줄인다.
                 System_DB system_db = new System_DB();
                 system_db.respawnMonster();
+            }
+            catch
+            {
 
-                DateTime time = System.DateTime.Now;
-                label3.Text = "현재 시간 : " + time.ToString("HH-mm-ss");
-                // 만약 정시 되기 10분 전이면? 배 열림
-                if(int.Parse(time.ToString("mm")) > 50)
-                {
-                    // 배 탈 수 있는 스위치 보냄
+            }
+        }
+        void timer_tick2(object sender, EventArgs e)
+        {
+            try
+            {
 
-                }
-                else if(int.Parse(time.ToString("mm")) > 1) // 운행한지 1분 후라면? 배 내릴 수 있음
-                {
-
-                }
-                else // 배 운행중..
-                {
-
-                }
             }
             catch
             {
