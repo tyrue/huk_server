@@ -209,11 +209,7 @@ namespace SupremePlayServer
                             }
                             else if (mainform.MapUser[map_id].Count == 0)
                             {
-                                List<String> a = new List<string>
-                                {
-                                    UserCode
-                                };
-                                mainform.MapUser.Add(map_id, a);
+                                mainform.MapUser[map_id].Add(UserCode);
                                 SW.WriteLine("<map_player>1</map_player>");
                                 SW.Flush();
                             }
@@ -232,6 +228,31 @@ namespace SupremePlayServer
                                 if(mainform.MapUser[last_map_id].Contains(UserCode))
                                 {
                                     mainform.MapUser[last_map_id].Remove(UserCode);
+
+                                    if(mainform.MapUser[last_map_id].Count != 0)
+                                    {
+                                        for (int i = 0; i < mainform.UserList.Count; i++)
+                                        {
+                                            if (mainform.UserList[i].UserCode.Equals(mainform.MapUser[last_map_id][0]))
+                                            {
+                                                try
+                                                {
+                                                    mainform.UserList[i].SW.WriteLine("<map_player>1</map_player>"); // 메시지 보내기
+                                                    mainform.UserList[i].SW.Flush();
+                                                    break;
+                                                }
+                                                catch (Exception e) // 팅긴걸로 판단
+                                                {
+
+                                                }
+                                            }
+                                            // 유효하지 않은 유저는 삭제
+                                            else
+                                            {
+
+                                            }
+                                        }
+                                    }
                                 }
                             }
                             last_map_id = map_id;
@@ -240,6 +261,39 @@ namespace SupremePlayServer
                         // 유저 종료
                         else if (GetMessage.Contains("<9>"))
                         {
+                            if (mainform.MapUser.ContainsKey(last_map_id))
+                            {
+                                if (mainform.MapUser[last_map_id].Contains(UserCode))
+                                {
+                                    mainform.MapUser[last_map_id].Remove(UserCode);
+
+                                    if (mainform.MapUser[last_map_id].Count != 0)
+                                    {
+                                        for (int i = 0; i < mainform.UserList.Count; i++)
+                                        {
+                                            if (mainform.UserList[i].UserCode.Equals(mainform.MapUser[last_map_id][0]))
+                                            {
+                                                try
+                                                {
+                                                    mainform.UserList[i].SW.WriteLine("<map_player>1</map_player>"); // 메시지 보내기
+                                                    mainform.UserList[i].SW.Flush();
+                                                    break;
+                                                }
+                                                catch (Exception e) // 팅긴걸로 판단
+                                                {
+
+                                                }
+                                            }
+                                            // 유효하지 않은 유저는 삭제
+                                            else
+                                            {
+
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
                             System_DB system = new System_DB();
                             if (!UserCode.Equals("*null*") && system.splitTag("9", GetMessage).Equals(UserCode))
                             {
