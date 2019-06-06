@@ -28,6 +28,7 @@ namespace SupremePlayServer
         List<String> plist;
         public Thread thread = null;
 
+        String last_map_id = "0";
         public void startClient(TcpClient clientSocket)
         {
             // Get Packet List
@@ -113,7 +114,7 @@ namespace SupremePlayServer
                                 UserId = words[1];
                             }
 
-                             // 이미 접속중
+                            // 이미 접속중
                             else if (resultcode == 3)
                                 SW.WriteLine("<login>al</login>");
 
@@ -138,21 +139,23 @@ namespace SupremePlayServer
                             System_DB system_db = new System_DB();
                             system_db.SaveData(GetMessage, UserId);
 
-                            try{
+                            try
+                            {
                                 if (UserCode.Equals("*null*"))
                                 {
                                     mainform.Invoke((MethodInvoker)(() => mainform.removethread(this)));
                                     thread.Abort();
                                 }
                             }
-                            catch (Exception e){
+                            catch (Exception e)
+                            {
 
                             }
                         }
 
                         // 경험치 이벤트 확인
                         else if (GetMessage.Contains("<exp_event>"))
-                        { 
+                        {
                             SW.WriteLine("<exp_event>" + mainform.radioSelected().ToString() + "</exp_event>");
                             SW.Flush();
                         }
@@ -165,7 +168,7 @@ namespace SupremePlayServer
 
                             mainform.Invoke((MethodInvoker)(() => mainform.Packet("<5 " + UserCode + ">" + d1[0])));
                         }
-                      
+
                         // 유저 데이터 로드
                         else if (GetMessage.Contains("<dtloadreq>"))
                         {
@@ -187,6 +190,51 @@ namespace SupremePlayServer
                             //MessageBox.Show("몬스터 정보 요청");
                             System_DB system_db = new System_DB();
                             system_db.SendMonster(NS, GetMessage);
+                        }
+
+                        // 현재 맵에서의 기준이 될 유저 확인
+                        else if (GetMessage.Contains("<map_player>"))
+                        {
+                            System_DB system = new System_DB();
+                            String map_id = system.splitTag("map_player", GetMessage);
+                            if (!mainform.MapUser.ContainsKey(map_id))
+                            {
+                                List<String> a = new List<string>
+                                {
+                                    UserCode
+                                };
+                                mainform.MapUser.Add(map_id, a);
+                                SW.WriteLine("<map_player>1</map_player>");
+                                SW.Flush();
+                            }
+                            else if (mainform.MapUser[map_id].Count == 0)
+                            {
+                                List<String> a = new List<string>
+                                {
+                                    UserCode
+                                };
+                                mainform.MapUser.Add(map_id, a);
+                                SW.WriteLine("<map_player>1</map_player>");
+                                SW.Flush();
+                            }
+                            else
+                            {
+                                if(!mainform.MapUser[map_id].Contains(UserCode))
+                                {
+                                    mainform.MapUser[map_id].Add(UserCode);
+                                    SW.WriteLine("<map_player>0</map_player>");
+                                    SW.Flush();
+                                }
+                            }
+
+                            if(mainform.MapUser.ContainsKey(last_map_id))
+                            {
+                                if(mainform.MapUser[last_map_id].Contains(UserCode))
+                                {
+                                    mainform.MapUser[last_map_id].Remove(UserCode);
+                                }
+                            }
+                            last_map_id = map_id;
                         }
 
                         // 유저 종료
@@ -214,7 +262,7 @@ namespace SupremePlayServer
                             string[] co1 = { ">" };
                             String[] d1 = GetMessage.Split(co1, StringSplitOptions.RemoveEmptyEntries);
 
-                            if(plist.IndexOf(d1[0] + ">") != -1)
+                            if (plist.IndexOf(d1[0] + ">") != -1)
                                 mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage)));
                         }
 

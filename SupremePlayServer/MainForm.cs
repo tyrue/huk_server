@@ -10,7 +10,9 @@ namespace SupremePlayServer
     public partial class MainForm : Form
     {
         public List<UserThread> UserList;
-
+        public Dictionary<String, List<string>> MapUser = new Dictionary<string, List<string>>();
+        
+       
         public MainForm()
         {
             InitializeComponent();
@@ -65,8 +67,6 @@ namespace SupremePlayServer
             // Listen New User Connection
             Thread echo_thread = new Thread(Thread_NetWorkListening);
             echo_thread.Start();
-
-
         }
 
         #region Mulit-Thread Tcp/Ip Network
