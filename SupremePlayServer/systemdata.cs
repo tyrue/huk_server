@@ -57,6 +57,8 @@ namespace SupremePlayServer
             plist.Add("<enemy_dead>"); // 몹 죽음 공유
             plist.Add("<respawn>"); // 몹 부활 공유
             plist.Add("<8>"); // 유저 죽음 알림
+            plist.Add("<hp>"); // 몹 체력 공유
+            plist.Add("<mon_move>"); // 몬스터 이동 공유
             return plist;
         }
     }

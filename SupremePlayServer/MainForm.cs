@@ -106,12 +106,14 @@ namespace SupremePlayServer
 
         #endregion
         // 모든 유저에게 전송하는 패킷
-        public void Packet(String data)
+        public void Packet(String data, String userCode = "")
         {
             for (int i = 0; i < UserList.Count; i++)
             {
                 if (!UserList[i].UserCode.Equals("*null*"))
                 {
+                    if (UserList[i].UserCode.Equals(userCode))
+                        continue;
                     try
                     {
                         //MessageBox.Show(data);

@@ -317,9 +317,13 @@ namespace SupremePlayServer
                             String[] d1 = GetMessage.Split(co1, StringSplitOptions.RemoveEmptyEntries);
 
                             if (plist.IndexOf(d1[0] + ">") != -1)
-                                mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage)));
+                            {
+                                if(d1[0].Contains("mon_move"))
+                                    mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage, UserCode)));
+                                else
+                                    mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage)));
+                            }
                         }
-
                     }
                 }
             }
