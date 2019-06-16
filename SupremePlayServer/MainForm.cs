@@ -38,6 +38,7 @@ namespace SupremePlayServer
         {
             try
             {
+                label3.Text = "현재 시간 : " + DateTime.Now.ToString("hh:mm:ss");
                 // 몬스터 db에서 체력 0인 몹의 리젠 시간을 300씩 줄인다.
                 System_DB system_db = new System_DB();
                 system_db.respawnMonster();
@@ -138,7 +139,7 @@ namespace SupremePlayServer
                 if (listBox2.Items.Count <= 300) // 서버 채팅 메세지 목록 개수 제한
                 {
                     string[] word = splitTag("chat1", data).Split(',');
-                    listBox2.Items.Add(word[0]);
+                    listBox2.Items.Add("(" + DateTime.Now.ToString("hh:mm:ss") + ") " + word[0]);
                     int visibleItems = listBox2.ClientSize.Height / listBox2.ItemHeight;
                     listBox2.TopIndex = Math.Max(listBox2.Items.Count - visibleItems + 1, 0);
                 }
@@ -157,23 +158,58 @@ namespace SupremePlayServer
                 // 접속이 되지 않은 유저 삭제 : 중간에 팅긴 유저에 대한 처리
                 if (!userthread.client.Connected) // 접속이 끊겼는데 접속 되어 있다고 처리되서 계속 오류나고 있음
                 {
-                    //Packet("<chat>(알림): '" + userthread.UserName + "'님께서 게임을 종료하셨습니다.</chat>");
                     if (userthread.UserName != null)
                     {
                         UserList.Remove(userthread);
                         PlayerCount();
+                        userthread.thread.Abort();
                     }
 
                     if (userthread.thread != null)
                     {
+                        Packet("<chat>(알림): '" + userthread.UserName + "'님께서 게임을 종료하셨습니다.</chat>");
                         UserList.Remove(userthread); // 여기서 문제인건데...
                         PlayerCount();
                         userthread.thread.Abort();
+                    }
+
+                    if (MapUser.ContainsKey(userthread.last_map_id))
+                    {
+                        if (MapUser[userthread.last_map_id].Contains(userthread.UserCode))
+                        {
+                            MapUser[userthread.last_map_id].Remove(userthread.UserCode);
+
+                            if (MapUser[userthread.last_map_id].Count != 0)
+                            {
+                                for (int i = 0; i < UserList.Count; i++)
+                                {
+                                    if (UserList[i].UserCode.Equals(MapUser[userthread.last_map_id][0]))
+                                    {
+                                        try
+                                        {
+                                            UserList[i].SW.WriteLine("<map_player>1</map_player>"); // 메시지 보내기
+                                            UserList[i].SW.Flush();
+                                            break;
+                                        }
+                                        catch (Exception e) // 팅긴걸로 판단
+                                        {
+
+                                        }
+                                    }
+                                    // 유효하지 않은 유저는 삭제
+                                    else
+                                    {
+
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
             catch (Exception e)
             {
+                MessageBox.Show(e.ToString());
             }
         }
 

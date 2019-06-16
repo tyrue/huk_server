@@ -28,7 +28,7 @@ namespace SupremePlayServer
         List<String> plist;
         public Thread thread = null;
 
-        String last_map_id = "0";
+        public String last_map_id = "0";
         public void startClient(TcpClient clientSocket)
         {
             // Get Packet List
@@ -318,7 +318,7 @@ namespace SupremePlayServer
 
                             if (plist.IndexOf(d1[0] + ">") != -1)
                             {
-                                if(d1[0].Contains("mon_move"))
+                                if(d1[0].Contains("mon_move") || d1[0].Contains("aggro"))
                                     mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage, UserCode)));
                                 else
                                     mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage)));
