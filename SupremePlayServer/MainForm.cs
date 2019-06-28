@@ -38,7 +38,7 @@ namespace SupremePlayServer
         {
             try
             {
-                label3.Text = "현재 시간 : " + DateTime.Now.ToString("hh:mm:ss");
+                label3.Text = "현재 시간 : " + DateTime.Now.ToString("HH:mm:ss");
                 // 몬스터 db에서 체력 0인 몹의 리젠 시간을 300씩 줄인다.
                 System_DB system_db = new System_DB();
                 system_db.respawnMonster();
@@ -139,7 +139,7 @@ namespace SupremePlayServer
                 if (listBox2.Items.Count <= 300) // 서버 채팅 메세지 목록 개수 제한
                 {
                     string[] word = splitTag("chat1", data).Split(',');
-                    listBox2.Items.Add("(" + DateTime.Now.ToString("hh:mm:ss") + ") " + word[0]);
+                    listBox2.Items.Add("(" + DateTime.Now.ToString("HH:mm:ss") + ") " + word[0]);
                     int visibleItems = listBox2.ClientSize.Height / listBox2.ItemHeight;
                     listBox2.TopIndex = Math.Max(listBox2.Items.Count - visibleItems + 1, 0);
                 }
@@ -167,7 +167,7 @@ namespace SupremePlayServer
 
                     if (userthread.thread != null)
                     {
-                        Packet("<chat>(알림): '" + userthread.UserName + "'님께서 게임을 종료하셨습니다.</chat>");
+                        Packet("<chat1>(알림): '" + userthread.UserName + "'님께서 종료하셨습니다.</chat1>");
                         UserList.Remove(userthread); // 여기서 문제인건데...
                         PlayerCount();
                         userthread.thread.Abort();
