@@ -45,16 +45,16 @@
             this.radioButton4 = new System.Windows.Forms.RadioButton();
             this.label3 = new System.Windows.Forms.Label();
             this.panel1 = new System.Windows.Forms.Panel();
-            this.panel2 = new System.Windows.Forms.Panel();
             this.panel3 = new System.Windows.Forms.Panel();
-            this.panel4 = new System.Windows.Forms.Panel();
             this.panel5 = new System.Windows.Forms.Panel();
+            this.panel4 = new System.Windows.Forms.Panel();
+            this.panel2 = new System.Windows.Forms.Panel();
             this.statusStrip1.SuspendLayout();
             this.panel1.SuspendLayout();
-            this.panel2.SuspendLayout();
             this.panel3.SuspendLayout();
-            this.panel4.SuspendLayout();
             this.panel5.SuspendLayout();
+            this.panel4.SuspendLayout();
+            this.panel2.SuspendLayout();
             this.SuspendLayout();
             // 
             // statusStrip1
@@ -86,7 +86,7 @@
             this.listBox1.ItemHeight = 15;
             this.listBox1.Location = new System.Drawing.Point(0, 0);
             this.listBox1.Name = "listBox1";
-            this.listBox1.Size = new System.Drawing.Size(126, 307);
+            this.listBox1.Size = new System.Drawing.Size(126, 324);
             this.listBox1.TabIndex = 4;
             // 
             // listBox2
@@ -94,13 +94,14 @@
             this.listBox2.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.listBox2.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawVariable;
+            this.listBox2.Font = new System.Drawing.Font("맑은 고딕", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(129)));
             this.listBox2.FormattingEnabled = true;
-            this.listBox2.ItemHeight = 15;
+            this.listBox2.HorizontalScrollbar = true;
+            this.listBox2.ItemHeight = 17;
             this.listBox2.Location = new System.Drawing.Point(3, 7);
             this.listBox2.Name = "listBox2";
             this.listBox2.SelectionMode = System.Windows.Forms.SelectionMode.None;
-            this.listBox2.Size = new System.Drawing.Size(446, 275);
+            this.listBox2.Size = new System.Drawing.Size(449, 259);
             this.listBox2.TabIndex = 5;
             this.listBox2.SelectedIndexChanged += new System.EventHandler(this.ListBox2_SelectedIndexChanged);
             // 
@@ -133,9 +134,9 @@
             // textBox1
             // 
             this.textBox1.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.textBox1.Location = new System.Drawing.Point(0, 309);
+            this.textBox1.Location = new System.Drawing.Point(0, 303);
             this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(598, 23);
+            this.textBox1.Size = new System.Drawing.Size(602, 23);
             this.textBox1.TabIndex = 8;
             this.textBox1.TextChanged += new System.EventHandler(this.TextBox1_TextChanged);
             this.textBox1.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.message_keyDown);
@@ -248,28 +249,28 @@
             this.panel1.Controls.Add(this.listBox2);
             this.panel1.Location = new System.Drawing.Point(144, 37);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(598, 332);
+            this.panel1.Size = new System.Drawing.Size(602, 326);
             this.panel1.TabIndex = 16;
-            // 
-            // panel2
-            // 
-            this.panel2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left)));
-            this.panel2.Controls.Add(this.listBox1);
-            this.panel2.Location = new System.Drawing.Point(9, 39);
-            this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(126, 307);
-            this.panel2.TabIndex = 17;
             // 
             // panel3
             // 
             this.panel3.Controls.Add(this.panel5);
             this.panel3.Controls.Add(this.panel4);
             this.panel3.Dock = System.Windows.Forms.DockStyle.Right;
-            this.panel3.Location = new System.Drawing.Point(455, 0);
+            this.panel3.Location = new System.Drawing.Point(459, 0);
             this.panel3.Name = "panel3";
-            this.panel3.Size = new System.Drawing.Size(143, 309);
+            this.panel3.Size = new System.Drawing.Size(143, 303);
             this.panel3.TabIndex = 18;
+            // 
+            // panel5
+            // 
+            this.panel5.Controls.Add(this.comboBox1);
+            this.panel5.Controls.Add(this.button1);
+            this.panel5.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.panel5.Location = new System.Drawing.Point(0, 203);
+            this.panel5.Name = "panel5";
+            this.panel5.Size = new System.Drawing.Size(143, 100);
+            this.panel5.TabIndex = 19;
             // 
             // panel4
             // 
@@ -283,15 +284,15 @@
             this.panel4.Size = new System.Drawing.Size(143, 105);
             this.panel4.TabIndex = 18;
             // 
-            // panel5
+            // panel2
             // 
-            this.panel5.Controls.Add(this.comboBox1);
-            this.panel5.Controls.Add(this.button1);
-            this.panel5.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.panel5.Location = new System.Drawing.Point(0, 209);
-            this.panel5.Name = "panel5";
-            this.panel5.Size = new System.Drawing.Size(143, 100);
-            this.panel5.TabIndex = 19;
+            this.panel2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+            this.panel2.Controls.Add(this.listBox1);
+            this.panel2.Location = new System.Drawing.Point(9, 39);
+            this.panel2.Name = "panel2";
+            this.panel2.Size = new System.Drawing.Size(126, 324);
+            this.panel2.TabIndex = 17;
             // 
             // MainForm
             // 
@@ -317,11 +318,11 @@
             this.statusStrip1.PerformLayout();
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
-            this.panel2.ResumeLayout(false);
             this.panel3.ResumeLayout(false);
+            this.panel5.ResumeLayout(false);
             this.panel4.ResumeLayout(false);
             this.panel4.PerformLayout();
-            this.panel5.ResumeLayout(false);
+            this.panel2.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -332,7 +333,6 @@
         private System.Windows.Forms.StatusStrip statusStrip1;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel1;
         private System.Windows.Forms.ListBox listBox1;
-        private System.Windows.Forms.ListBox listBox2;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.TextBox textBox1;
@@ -349,6 +349,7 @@
         private System.Windows.Forms.Panel panel3;
         private System.Windows.Forms.Panel panel4;
         private System.Windows.Forms.Panel panel5;
+        private System.Windows.Forms.ListBox listBox2;
     }
 }
 
