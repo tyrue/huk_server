@@ -86,7 +86,10 @@ namespace SupremePlayServer
                     SW.Flush();
                 }
             }
-            catch{}
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
+            }
         }
 
         #endregion
@@ -137,7 +140,10 @@ namespace SupremePlayServer
 
                 UserName += "," + resultcode;
             }
-            catch { }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
+            }
 
             return UserName;
         }
@@ -223,7 +229,7 @@ namespace SupremePlayServer
 
             catch (Exception e)
             {
-                //MessageBox.Show(e.Message);
+                MessageBox.Show(e.Message);
             }
         }
 
@@ -262,7 +268,7 @@ namespace SupremePlayServer
             }
             catch (Exception e)
             {
-
+               // MessageBox.Show(e.ToString());
             }
         }
         #endregion
@@ -341,7 +347,7 @@ namespace SupremePlayServer
 
             catch (Exception e)
             {
-               // MessageBox.Show(e.Message);
+              // MessageBox.Show(e.Message);
             }
         }
         #endregion
@@ -407,7 +413,7 @@ namespace SupremePlayServer
                 }
                 catch (Exception e)
                 {
-                    MessageBox.Show(e.Message);
+                    //MessageBox.Show(e.Message);
                     conn.Close();
                 }
             }

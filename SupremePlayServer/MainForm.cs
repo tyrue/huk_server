@@ -23,6 +23,9 @@ namespace SupremePlayServer
                 radioButton1.Select();
             }
 
+            List<String> a = new List<string> {"0"};
+            MapUser.Add("0", a);
+
             // 타이머 생성 및 시작
             System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
             System.Windows.Forms.Timer timer2 = new System.Windows.Forms.Timer();
@@ -45,7 +48,7 @@ namespace SupremePlayServer
             }
             catch
             {
-
+                MessageBox.Show(e.ToString());
             }
         }
         void timer_tick2(object sender, EventArgs e)
@@ -97,7 +100,7 @@ namespace SupremePlayServer
             }
             catch (Exception e)
             {
-
+                MessageBox.Show(e.ToString());
             }
             finally
             {
@@ -163,27 +166,35 @@ namespace SupremePlayServer
                         UserList.Remove(userthread);
                         PlayerCount();
                         userthread.thread.Abort();
+                        if (userthread.UserName != null)
+                        {   
+                            Packet("<9>" + userthread.UserCode + "</9>");
+                        }
                     }
 
                     if (userthread.thread != null)
                     {
-                        Packet("<chat1>(알림): '" + userthread.UserName + "'님께서 종료하셨습니다.</chat1>");
                         UserList.Remove(userthread); // 여기서 문제인건데...
                         PlayerCount();
                         userthread.thread.Abort();
+                        if (userthread.UserName != null)
+                        {
+                            //MessageBox.Show(userthread.UserName + "'님께서 종료하셨습니다.");
+                            Packet("<chat1>(알림): '" + userthread.UserName + "'님께서 종료하셨습니다.</chat1>");
+                            Packet("<9>" + userthread.UserCode + "</9>");
+                        }
                     }
 
                     if (MapUser.ContainsKey(userthread.last_map_id))
                     {
-                        if (MapUser[userthread.last_map_id].Contains(userthread.UserCode))
+                        string last = userthread.last_map_id;
+                        if (MapUser[last].Contains(userthread.UserCode))
                         {
-                            MapUser[userthread.last_map_id].Remove(userthread.UserCode);
-
-                            if (MapUser[userthread.last_map_id].Count != 0)
+                            if (MapUser[last].Count >= 2 && MapUser[last].IndexOf(userthread.UserCode) == 0)
                             {
-                                for (int i = 0; i < UserList.Count; i++)
+                                for (int i = 1; i < UserList.Count; i++)
                                 {
-                                    if (UserList[i].UserCode.Equals(MapUser[userthread.last_map_id][0]))
+                                    if (UserList[i].UserCode.Equals(MapUser[last][1]))
                                     {
                                         try
                                         {
@@ -193,16 +204,17 @@ namespace SupremePlayServer
                                         }
                                         catch (Exception e) // 팅긴걸로 판단
                                         {
-
+                                            //MessageBox.Show(e.ToString());
                                         }
                                     }
                                     // 유효하지 않은 유저는 삭제
                                     else
                                     {
-
+                                        
                                     }
                                 }
                             }
+                            MapUser[last].Remove(userthread.UserCode);
                         }
                     }
                 }
@@ -231,6 +243,7 @@ namespace SupremePlayServer
             }
             catch (Exception e)
             {
+                //MessageBox.Show(e.ToString());
             }
 
             return check;

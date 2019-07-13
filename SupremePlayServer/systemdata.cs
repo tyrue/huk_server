@@ -51,6 +51,7 @@ namespace SupremePlayServer
             plist.Add("<nptyes2>");
             plist.Add("<nptout>");
             plist.Add("<nptgain>");
+            plist.Add("<npt_move>"); // 파티 장소 이동
             plist.Add("<cashgive>");
             plist.Add("<switches>"); // 스위치 공유
             plist.Add("<variables>"); // 변수 공유
