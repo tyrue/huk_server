@@ -190,7 +190,9 @@ namespace SupremePlayServer
                     // DB Connection
                     conn.Open();
 
-                    string sql = "SELECT* FROM userinfo";
+                    string sql = "" +
+                        "SELECT* FROM userinfo" +
+                        " WHERE nickname LIKE " + "'" + data[1] + "'";
                     MySqlCommand cmd = new MySqlCommand(sql, conn);
                     MySqlDataReader rdr = cmd.ExecuteReader();
 
@@ -218,9 +220,18 @@ namespace SupremePlayServer
                     conn.Open();
                     string sql = "";
                     if(u_query != "")
-                        sql = "INSERT INTO userinfo VALUES(" + query + ") ON DUPLICATE KEY UPDATE " + u_query;
+                    {
+                        sql = "" +
+                            "UPDATE userinfo" +
+                            " SET " + u_query +
+                            " WHERE nickname LIKE " + "'" + data[1] + "'";
+                    }
                     else
-                        sql = "INSERT INTO userinfo VALUES(" + query + ") ON DUPLICATE KEY UPDATE id = ''";
+                    {
+                        //sql = "INSERT INTO userinfo VALUES(" + query + ") ON DUPLICATE KEY UPDATE id = ''";
+                        sql = "INSERT INTO userinfo VALUES(" + query + ")";
+                    }
+                        
                     MySqlCommand cmd = new MySqlCommand(sql, conn);
                     cmd.ExecuteNonQuery();
                     conn.Close();
@@ -307,7 +318,9 @@ namespace SupremePlayServer
                     // DB Connection
                     conn.Open();
 
-                    string sql = "SELECT* FROM monster";
+                    string sql = "" +
+                        "SELECT* FROM monster" +
+                        " WHERE (mapid = " + data[0] + " AND id = " + data[1] + ")";
                     MySqlCommand cmd = new MySqlCommand(sql, conn);
                     MySqlDataReader rdr = cmd.ExecuteReader();
 
@@ -335,7 +348,10 @@ namespace SupremePlayServer
                     string sql = "";
                     if (u_query != "") // DB에 해당 맵의 이벤트가 없다면 새로 추가
                     {
-                        sql = "INSERT INTO monster VALUES(" + query + ") ON DUPLICATE KEY UPDATE " + u_query;
+                        sql = "" +
+                            "UPDATE monster" +
+                            " SET " + u_query +
+                            " WHERE (mapid = " + data[0] + " AND id = " + data[1] + ")" ;
                     }
                     else
                     {
@@ -349,7 +365,7 @@ namespace SupremePlayServer
 
             catch (Exception e)
             {
-              // MessageBox.Show(e.Message);
+               MessageBox.Show(e.Message);
             }
         }
         #endregion
