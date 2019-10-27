@@ -98,16 +98,16 @@ namespace SupremePlayServer
 
                             // 아이디 잘못 입력
                             if (resultcode == 0)
-                                SW.WriteLine("<login>wu</login>");
+                                SW.WriteLine("<login>wu,1</login>");
 
                             // 비번 잘못입력
                             else if (resultcode == 1)
-                                SW.WriteLine("<login>wp</login>");
+                                SW.WriteLine("<login>wp,1</login>");
 
                             // 로긴 성공
                             else if (resultcode == 2)
                             {
-                                SW.WriteLine("<login>allow</login>");
+                                SW.WriteLine("<login>allow," + words[0] + "</login>");
 
                                 // Set UserName, UserId
                                 UserName = words[0];
@@ -116,7 +116,7 @@ namespace SupremePlayServer
 
                             // 이미 접속중
                             else if (resultcode == 3)
-                                SW.WriteLine("<login>al</login>");
+                                SW.WriteLine("<login>al,1</login>");
 
                             SW.Flush();
                         }
