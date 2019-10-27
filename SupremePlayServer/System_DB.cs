@@ -30,7 +30,7 @@ namespace SupremePlayServer
                 {
                     // get Data
                     string[] co = { "," };
-                    d1 = splitTag("nickname", data).Split(co, StringSplitOptions.RemoveEmptyEntries);
+                    d1 = splitTag("regist", data).Split(co, StringSplitOptions.RemoveEmptyEntries);
                     
                     // DB Connection
                     conn.Open();
@@ -67,21 +67,21 @@ namespace SupremePlayServer
                             // DB Connection
                             conn.Open();
 
-                            string sql = "INSERT INTO user VALUES('" + d1[0] + "', '" + d1[1] + "', '" + d1[2] + "')";
+                            string sql = "INSERT INTO user VALUES('" + d1[0] + "', '" + d1[1] + "', '" + d1[2] + "', now())";
                             MySqlCommand cmd = new MySqlCommand(sql, conn);
                             cmd.ExecuteNonQuery();
-
-                            SW.WriteLine("<reges>success</reges>");
+                            
+                            SW.WriteLine("<regist>success</regist>");
                         }
                     }
 
                     // Already Exist Id
                     else if (resultcode == 1)
-                        SW.WriteLine("<reges>wu</reges>");
+                        SW.WriteLine("<regist>wi</regist>");
 
                     // Already Exist nickname
                     else if (resultcode == 2)
-                        SW.WriteLine("<nick_name>No</nick_name>");
+                        SW.WriteLine("<regist>wn</regist>");
 
                     SW.Flush();
                 }
@@ -251,7 +251,9 @@ namespace SupremePlayServer
                     // DB Connection
                     conn.Open();
 
-                    string sql = "SELECT* FROM userinfo where id = '" + userid + "'";
+                    string sql = "" +
+                        "SELECT* FROM userinfo " +
+                        "WHERE id = '" + userid + "'";
                     MySqlCommand cmd = new MySqlCommand(sql, conn);
                     MySqlDataReader rdr = cmd.ExecuteReader();
 
@@ -367,7 +369,9 @@ namespace SupremePlayServer
                     // DB Connection
                     conn.Open();
 
-                    string sql = "SELECT* FROM monster where mapid = '" + pkdata + "'";
+                    string sql = "" +
+                        "SELECT* FROM monster " +
+                        "WHERE mapid = '" + pkdata + "'";
                     MySqlCommand cmd = new MySqlCommand(sql, conn);
                     MySqlDataReader rdr = cmd.ExecuteReader();
 
@@ -400,13 +404,17 @@ namespace SupremePlayServer
                 conn.Open();
                 try
                 {
-                    string sql = "UPDATE monster SET delay = delay - 10 WHERE hp = 0 AND delay > 0";
+                    string sql = "" +
+                        "UPDATE monster SET delay = delay - 10 " +
+                        "WHERE hp = 0 AND delay > 0";
                     MySqlCommand cmd = new MySqlCommand(sql, conn);
                     MySqlDataReader rdr = cmd.ExecuteReader();
                     conn.Close();
 
                     conn.Open();
-                    sql = "UPDATE monster SET delay = 0 WHERE delay < 0";
+                    sql = "" +
+                        "UPDATE monster SET delay = 0 " +
+                        "WHERE delay < 0";
                     cmd = new MySqlCommand(sql, conn);
                     rdr = cmd.ExecuteReader();
                     conn.Close();

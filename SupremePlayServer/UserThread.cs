@@ -76,7 +76,7 @@ namespace SupremePlayServer
                         }
 
                         // Registration
-                        else if (GetMessage.Contains("<nickname>"))
+                        else if (GetMessage.Contains("<regist>"))
                         {
                             System_DB system_db = new System_DB();
                             system_db.Registeration(NS, GetMessage);
@@ -86,13 +86,13 @@ namespace SupremePlayServer
                         else if (GetMessage.Contains("<login"))
                         {
                             System_DB system_db = new System_DB();
-                            String Ldata = system_db.Login(GetMessage);
+                            String Ldata = system_db.Login(GetMessage); // 로그인 결과 받아옴
 
                             String[] words = Ldata.Split(',');
                             int resultcode = Int32.Parse(words[2]);
 
                             bool existconn = false;
-                            mainform.Invoke((MethodInvoker)(() => existconn = mainform.Checkid(words[0])));
+                            mainform.Invoke((MethodInvoker)(() => existconn = mainform.Checkid(words[1])));
 
                             if (existconn) resultcode = 3;
 
