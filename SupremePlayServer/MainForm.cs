@@ -139,9 +139,23 @@ namespace SupremePlayServer
 
             if (data.Contains("<chat1>"))
             {
-                if (listBox2.Items.Count <= 300) // 서버 채팅 메세지 목록 개수 제한
+                if (listBox2.Items.Count <= 500) // 서버 채팅 메세지 목록 개수 제한
                 {
                     string[] word = splitTag("chat1", data).Split(',');
+                    listBox2.Items.Add("(" + DateTime.Now.ToString("HH:mm:ss") + ") " + word[0]);
+                    int visibleItems = listBox2.ClientSize.Height / listBox2.ItemHeight;
+                    listBox2.TopIndex = Math.Max(listBox2.Items.Count - visibleItems + 1, 0);
+                }
+                else
+                {
+                    listBox2.Items.Clear();
+                }
+            }
+            if (data.Contains("<chat>"))
+            {
+                if (listBox2.Items.Count <= 500) // 서버 채팅 메세지 목록 개수 제한
+                {
+                    string[] word = splitTag("chat", data).Split(',');
                     listBox2.Items.Add("(" + DateTime.Now.ToString("HH:mm:ss") + ") " + word[0]);
                     int visibleItems = listBox2.ClientSize.Height / listBox2.ItemHeight;
                     listBox2.TopIndex = Math.Max(listBox2.Items.Count - visibleItems + 1, 0);
@@ -308,7 +322,6 @@ namespace SupremePlayServer
                 if (!textBox1.Text.Equals(""))
                 {
                     Packet("<chat>" + textBox1.Text + "</chat>");
-                    listBox2.Items.Add(textBox1.Text);
                     textBox1.Text = "";
                 }
             }
