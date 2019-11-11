@@ -192,6 +192,27 @@ namespace SupremePlayServer
                             system_db.SendMonster(NS, GetMessage);
                         }
 
+                        // DB에 아이템 데이터 저장
+                        else if (GetMessage.Contains("<map_item>"))
+                        {
+                            System_DB system_db = new System_DB();
+                            system_db.SaveItem(GetMessage);
+                        }
+
+                        // DB에 아이템 데이터 삭제
+                        else if (GetMessage.Contains("<del_item>"))
+                        {
+                            System_DB system_db = new System_DB();
+                            system_db.DelItem(GetMessage);
+                        }
+
+                        // 현재 맵의 아이템 정보 전달
+                        else if (GetMessage.Contains("<req_item>"))
+                        {
+                            System_DB system_db = new System_DB();
+                            system_db.SendItem(NS, GetMessage);
+                        }
+
                         // 현재 맵에서의 기준이 될 유저 확인
                         else if (GetMessage.Contains("<map_player>"))
                         {

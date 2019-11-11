@@ -30,7 +30,7 @@ namespace SupremePlayServer
             System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
             System.Windows.Forms.Timer timer2 = new System.Windows.Forms.Timer();
             timer.Interval = 1000; // 몹 리젠 시간
-            timer2.Interval = 500; // 몹 정보 보냄
+            timer2.Interval = 1000 * 3600; // 맵에 있는 아이템 삭제 주기
             timer.Tick += new EventHandler(timer_tick);
             timer2.Tick += new EventHandler(timer_tick2);
             timer.Start();
@@ -42,7 +42,7 @@ namespace SupremePlayServer
             try
             {
                 label3.Text = "현재 시간 : " + DateTime.Now.ToString("HH:mm:ss");
-                // 몬스터 db에서 체력 0인 몹의 리젠 시간을 300씩 줄인다.
+                // 초당 몬스터 db에서 체력 0인 몹의 리젠 시간을 줄인다.
                 System_DB system_db = new System_DB();
                 system_db.respawnMonster();
             }
@@ -55,11 +55,16 @@ namespace SupremePlayServer
         {
             try
             {
+                listBox2.Items.Add("맵의 모든 아이템 삭제");
+                Packet("<chat>맵의 모든 아이템들이 삭제 됩니다.</chat>");
 
+                
+                System_DB system_db = new System_DB();
+                system_db.DelAllItem();
             }
             catch
             {
-
+                MessageBox.Show(e.ToString());
             }
         }
 

@@ -64,7 +64,7 @@
             this.toolStripStatusLabel2});
             this.statusStrip1.Location = new System.Drawing.Point(0, 372);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(770, 22);
+            this.statusStrip1.Size = new System.Drawing.Size(813, 22);
             this.statusStrip1.TabIndex = 3;
             this.statusStrip1.Text = "접속자 :";
             // 
@@ -101,7 +101,7 @@
             this.listBox2.Location = new System.Drawing.Point(3, 7);
             this.listBox2.Name = "listBox2";
             this.listBox2.SelectionMode = System.Windows.Forms.SelectionMode.None;
-            this.listBox2.Size = new System.Drawing.Size(449, 259);
+            this.listBox2.Size = new System.Drawing.Size(492, 259);
             this.listBox2.TabIndex = 5;
             this.listBox2.SelectedIndexChanged += new System.EventHandler(this.ListBox2_SelectedIndexChanged);
             // 
@@ -136,7 +136,7 @@
             this.textBox1.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.textBox1.Location = new System.Drawing.Point(0, 303);
             this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(602, 23);
+            this.textBox1.Size = new System.Drawing.Size(645, 23);
             this.textBox1.TabIndex = 8;
             this.textBox1.TextChanged += new System.EventHandler(this.TextBox1_TextChanged);
             this.textBox1.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.message_keyDown);
@@ -249,7 +249,7 @@
             this.panel1.Controls.Add(this.listBox2);
             this.panel1.Location = new System.Drawing.Point(144, 37);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(602, 326);
+            this.panel1.Size = new System.Drawing.Size(645, 326);
             this.panel1.TabIndex = 16;
             // 
             // panel3
@@ -257,7 +257,7 @@
             this.panel3.Controls.Add(this.panel5);
             this.panel3.Controls.Add(this.panel4);
             this.panel3.Dock = System.Windows.Forms.DockStyle.Right;
-            this.panel3.Location = new System.Drawing.Point(459, 0);
+            this.panel3.Location = new System.Drawing.Point(502, 0);
             this.panel3.Name = "panel3";
             this.panel3.Size = new System.Drawing.Size(143, 303);
             this.panel3.TabIndex = 18;
@@ -298,7 +298,7 @@
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Inherit;
             this.AutoScroll = true;
-            this.ClientSize = new System.Drawing.Size(770, 394);
+            this.ClientSize = new System.Drawing.Size(813, 394);
             this.Controls.Add(this.panel2);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.label3);
@@ -309,7 +309,7 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.MaximizeBox = false;
-            this.MaximumSize = new System.Drawing.Size(800, 800);
+            this.MaximumSize = new System.Drawing.Size(1000, 800);
             this.Name = "MainForm";
             this.Text = "흑부엉의 바람의나라 온라인 서버";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.FormClose);

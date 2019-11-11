@@ -444,6 +444,157 @@ namespace SupremePlayServer
         }
         #endregion
 
+        #region 아이템 데이터 저장
+        public void SaveItem(String pkdata)
+        {
+            pkdata = splitTag("map_item", pkdata);
+
+            string[] co1 = { " " };
+            String[] data = pkdata.Split(co1, StringSplitOptions.None);
+
+            String query = "'";
+            
+            try
+            {
+                for (int i = 0; i < data.Length; i++)
+                {
+                    if (data[i].Equals(""))
+                    {
+                        data[i] = "nil";
+                    }
+
+                    query += data[i];
+
+                    if (i != data.Length - 1)
+                        query += "', '";
+                    else
+                        query += "'";
+                }
+
+                using (MySqlConnection conn = new MySqlConnection(DBInfo))
+                {
+                    // DB Connection
+                    conn.Open();
+                    string sql = "";    
+                    sql = "INSERT INTO item VALUES(" + query + ")";
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    cmd.ExecuteNonQuery();
+                    conn.Close();
+                }
+            }
+
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
+            }
+        }
+        #endregion
+
+        #region 아이템 데이터 삭제
+        public void DelItem(String pkdata)
+        {
+            pkdata = splitTag("del_item", pkdata);
+
+            string[] co1 = { " " };
+            String[] data = pkdata.Split(co1, StringSplitOptions.None);
+
+            try
+            {
+                for (int i = 0; i < data.Length; i++)
+                {
+                    if (data[i].Equals(""))
+                    {
+                        data[i] = "nil";
+                    }
+                }
+
+                using (MySqlConnection conn = new MySqlConnection(DBInfo))
+                {
+                    // DB Connection
+                    conn.Open();
+                    string sql = "";
+                    sql = "DELETE FROM item" +
+                        " WHERE (map_id = " + data[0] + " AND x = " + data[2] + " AND y = " + data[3] + ")";
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    cmd.ExecuteNonQuery();
+                    conn.Close();
+                }
+            }
+
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
+            }
+        }
+        #endregion
+
+        #region 아이템 데이터 전송
+        public void SendItem(NetworkStream NS, String pkdata)
+        {
+            StreamWriter SW = new StreamWriter(NS, Encoding.UTF8);
+            pkdata = splitTag("req_item", pkdata); // mapid를 추출함
+
+            try
+            {
+                using (MySqlConnection conn = new MySqlConnection(DBInfo))
+                {
+                    // DB Connection
+                    conn.Open();
+
+                    string sql = "" +
+                        "SELECT* FROM item " +
+                        " WHERE map_id = '" + pkdata + "'";
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    MySqlDataReader rdr = cmd.ExecuteReader();
+
+                    while (rdr.Read())
+                    {
+                        string data = "<drop_create>";
+                        for (int i = 0; i < rdr.FieldCount; i++)
+                        {
+                            data += rdr[i].ToString();
+                            if (i == rdr.FieldCount - 1) break;
+                            data += " ";
+                        }
+                            
+                        data += "</drop_create>";
+                        SW.WriteLine(data); // 해당 유저에게만 보냄 지금 여기서 문제;
+                    }
+                    SW.Flush();
+                    rdr.Close();
+                    conn.Close();
+                }
+            }
+            catch (Exception e)
+            {
+                //MessageBox.Show(e.Message);
+            }
+        }
+        #endregion
+
+        #region 맵의 모든 아이템 데이터 삭제
+        public void DelAllItem()
+        {
+            try
+            { 
+                using (MySqlConnection conn = new MySqlConnection(DBInfo))
+                {
+                    // DB Connection
+                    conn.Open();
+                    string sql = "DELETE FROM item";
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    cmd.ExecuteNonQuery();
+                    conn.Close();
+                }
+            }
+
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
+            }
+        }
+        #endregion
+
         #region 태그 나누기
         // Split Tag
         public String splitTag(String tag, String data)
