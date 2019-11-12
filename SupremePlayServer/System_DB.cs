@@ -421,18 +421,10 @@ namespace SupremePlayServer
                 try
                 {
                     string sql = "" +
-                        "UPDATE monster SET delay = delay - 10 " +
+                        "UPDATE monster SET delay = delay - 60 " +
                         "WHERE hp = 0 AND delay > 0";
                     MySqlCommand cmd = new MySqlCommand(sql, conn);
                     MySqlDataReader rdr = cmd.ExecuteReader();
-                    conn.Close();
-
-                    conn.Open();
-                    sql = "" +
-                        "UPDATE monster SET delay = 0 " +
-                        "WHERE delay < 0";
-                    cmd = new MySqlCommand(sql, conn);
-                    rdr = cmd.ExecuteReader();
                     conn.Close();
                 }
                 catch (Exception e)
