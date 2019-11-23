@@ -587,6 +587,30 @@ namespace SupremePlayServer
         }
         #endregion
 
+
+        #region 모든 몹 데이터 삭제 (리프레시)
+        public void DelAllMonster()
+        {
+            try
+            {
+                using (MySqlConnection conn = new MySqlConnection(DBInfo))
+                {
+                    // DB Connection
+                    conn.Open();
+                    string sql = "DELETE FROM monster";
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    cmd.ExecuteNonQuery();
+                    conn.Close();
+                }
+            }
+
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
+            }
+        }
+        #endregion
+
         #region 태그 나누기
         // Split Tag
         public String splitTag(String tag, String data)

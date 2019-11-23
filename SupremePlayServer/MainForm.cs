@@ -4,6 +4,7 @@ using System.Windows.Forms;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.IO;
 
 namespace SupremePlayServer
 {
@@ -28,45 +29,42 @@ namespace SupremePlayServer
 
             // 타이머 생성 및 시작
             System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
-            System.Windows.Forms.Timer timer2 = new System.Windows.Forms.Timer();
             timer.Interval = 1000; // 몹 리젠 시간
-            timer2.Interval = 1000 * 3600; // 맵에 있는 아이템 삭제 주기
             timer.Tick += new EventHandler(timer_tick);
-            timer2.Tick += new EventHandler(timer_tick2);
             timer.Start();
-            timer2.Start();
+
+            // 서버 시작할 때 몹 데이터 정리
+            string t = DateTime.Now.ToString();
+            System_DB system_db = new System_DB();
+            system_db.DelAllMonster();
+            listBox2.Items.Add("(" + t + ") 서버 시작");
+            listBox2.Items.Add("(" + t + ") 몬스터 데이터 삭제");
         }
 
         void timer_tick(object sender, EventArgs e)
         {
             try
             {
-                label3.Text = "현재 시간 : " + DateTime.Now.ToString("HH:mm:ss");
+                string t = DateTime.Now.ToString("HH:mm:ss");
+                label3.Text = "현재 시간 : " + t;
                 // 초당 몬스터 db에서 체력 0인 몹의 리젠 시간을 줄인다.
                 System_DB system_db = new System_DB();
                 system_db.respawnMonster();
-            }
-            catch
-            {
-                MessageBox.Show(e.ToString());
-            }
-        }
-        void timer_tick2(object sender, EventArgs e)
-        {
-            try
-            {
-                listBox2.Items.Add("맵의 모든 아이템 삭제");
-                Packet("<chat>맵의 모든 아이템들이 삭제 됩니다.</chat>");
 
-                
-                System_DB system_db = new System_DB();
-                system_db.DelAllItem();
+                if(t.Contains(":00:00") || t.Contains(":00:01"))
+                {
+                    listBox2.Items.Add("(" + t + ")맵의 모든 아이템 삭제");
+                    Packet("<chat>맵의 모든 아이템들이 삭제 됩니다.</chat>");
+
+                    system_db.DelAllItem();
+                }
             }
             catch
             {
                 MessageBox.Show(e.ToString());
             }
         }
+        
 
         private void Form1_Load(object sender, EventArgs e)
         {
@@ -142,33 +140,20 @@ namespace SupremePlayServer
             }
             PlayerCount();
 
+            
             if (data.Contains("<chat1>"))
             {
-                if (listBox2.Items.Count <= 500) // 서버 채팅 메세지 목록 개수 제한
-                {
-                    string[] word = splitTag("chat1", data).Split(',');
-                    listBox2.Items.Add("(" + DateTime.Now.ToString("HH:mm:ss") + ") " + word[0]);
-                    int visibleItems = listBox2.ClientSize.Height / listBox2.ItemHeight;
-                    listBox2.TopIndex = Math.Max(listBox2.Items.Count - visibleItems + 1, 0);
-                }
-                else
-                {
-                    listBox2.Items.Clear();
-                }
+                string[] word = splitTag("chat1", data).Split(',');
+                listBox2.Items.Add("(" + DateTime.Now.ToString() + ") " + word[0]);
+                int visibleItems = listBox2.ClientSize.Height / listBox2.ItemHeight;
+                listBox2.TopIndex = Math.Max(listBox2.Items.Count - visibleItems + 1, 0);   
             }
             if (data.Contains("<chat>"))
             {
-                if (listBox2.Items.Count <= 500) // 서버 채팅 메세지 목록 개수 제한
-                {
-                    string[] word = splitTag("chat", data).Split(',');
-                    listBox2.Items.Add("(" + DateTime.Now.ToString("HH:mm:ss") + ") " + word[0]);
-                    int visibleItems = listBox2.ClientSize.Height / listBox2.ItemHeight;
-                    listBox2.TopIndex = Math.Max(listBox2.Items.Count - visibleItems + 1, 0);
-                }
-                else
-                {
-                    listBox2.Items.Clear();
-                }
+                string[] word = splitTag("chat", data).Split(',');
+                listBox2.Items.Add("(" + DateTime.Now.ToString() + ") " + word[0]);
+                int visibleItems = listBox2.ClientSize.Height / listBox2.ItemHeight;
+                listBox2.TopIndex = Math.Max(listBox2.Items.Count - visibleItems + 1, 0);
             }
         }
 
@@ -199,6 +184,7 @@ namespace SupremePlayServer
                         if (userthread.UserName != null)
                         {
                             //MessageBox.Show(userthread.UserName + "'님께서 종료하셨습니다.");
+                            listBox2.Items.Add("(" + DateTime.Now.ToString() + ") " + userthread.UserName + " 종료");
                             Packet("<chat1>(알림): '" + userthread.UserName + "'님께서 종료하셨습니다.</chat1>");
                             Packet("<9>" + userthread.UserCode + "</9>");
                         }
@@ -270,6 +256,25 @@ namespace SupremePlayServer
 
         private void FormClose(object sender, FormClosedEventArgs e)
         {
+            // 지금까지의 로그를 저장하기
+            try
+            {
+                if(!Directory.Exists(@"./log/"))
+                Directory.CreateDirectory(@"./log/");
+            }
+            catch
+            {
+
+            }
+            listBox2.Items.Add("(" + DateTime.Now.ToString() + ") 서버 종료");
+            string t = DateTime.Now.ToShortDateString();
+            using (StreamWriter logfile = new StreamWriter(@"./log/(" + t + ")log.txt", true))
+            {
+                foreach (string i in listBox2.Items)
+                {
+                    logfile.WriteLine(i.ToString());
+                }
+            }
             Application.ExitThread();
             Environment.Exit(0);
             System.Diagnostics.Process.GetCurrentProcess().Kill();
@@ -326,7 +331,7 @@ namespace SupremePlayServer
             {
                 if (!textBox1.Text.Equals(""))
                 {
-                    Packet("<chat>" + textBox1.Text + "</chat>");
+                    Packet("<chat>(공지) : " + textBox1.Text + "</chat>");
                     textBox1.Text = "";
                 }
             }
@@ -336,7 +341,7 @@ namespace SupremePlayServer
                 {
                     string name = UserList[listBox1.SelectedIndex].UserName;
                     Packet("<prison>" + name + "</prison>");
-                    listBox2.Items.Add(name + " 감옥");
+                    listBox2.Items.Add("(" + DateTime.Now.ToString() + ") " + name + " 감옥");
                     textBox1.Text = "";
                 }
             }
@@ -346,7 +351,7 @@ namespace SupremePlayServer
                 {
                     string name = UserList[listBox1.SelectedIndex].UserName;
                     Packet("<emancipation>" + name + "</emancipation>");
-                    listBox2.Items.Add(name + " 석방");
+                    listBox2.Items.Add("(" + DateTime.Now.ToString() + ") " + name + " 석방");
                     textBox1.Text = "";
                 }
             }
@@ -357,14 +362,14 @@ namespace SupremePlayServer
                     string name = UserList[listBox1.SelectedIndex].UserName;
                     Packet("<ki>" + name + "," + textBox1.Text + ",</ki>");
                     Packet("<chat>" + name + "님이 강퇴 당하셨습니다." + "</chat>");
-                    listBox2.Items.Add(name + "강퇴");
+                    listBox2.Items.Add("(" + DateTime.Now.ToString() + ") " + name + " 강퇴");
                     textBox1.Text = "";
                 }
             }
             else if (comboBox1.SelectedIndex == 4) // 모두 강퇴
             {
                 Packet("<ki>모두," + textBox1.Text + ",</ki>");
-                listBox2.Items.Add(textBox1.Text);
+                listBox2.Items.Add("(" + DateTime.Now.ToString() + ") " + textBox1.Text);
                 textBox1.Text = "";
             }
             // 자동 스크롤
