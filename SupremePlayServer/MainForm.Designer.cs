@@ -38,7 +38,6 @@
             this.label2 = new System.Windows.Forms.Label();
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.button1 = new System.Windows.Forms.Button();
-            this.comboBox1 = new System.Windows.Forms.ComboBox();
             this.radioButton1 = new System.Windows.Forms.RadioButton();
             this.radioButton2 = new System.Windows.Forms.RadioButton();
             this.radioButton3 = new System.Windows.Forms.RadioButton();
@@ -46,6 +45,11 @@
             this.label3 = new System.Windows.Forms.Label();
             this.panel1 = new System.Windows.Forms.Panel();
             this.panel3 = new System.Windows.Forms.Panel();
+            this.radioButton_5 = new System.Windows.Forms.RadioButton();
+            this.radioButton_4 = new System.Windows.Forms.RadioButton();
+            this.radioButton_3 = new System.Windows.Forms.RadioButton();
+            this.radioButton_2 = new System.Windows.Forms.RadioButton();
+            this.radioButton_1 = new System.Windows.Forms.RadioButton();
             this.panel5 = new System.Windows.Forms.Panel();
             this.panel4 = new System.Windows.Forms.Panel();
             this.panel2 = new System.Windows.Forms.Panel();
@@ -62,9 +66,9 @@
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripStatusLabel1,
             this.toolStripStatusLabel2});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 372);
+            this.statusStrip1.Location = new System.Drawing.Point(0, 375);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(813, 22);
+            this.statusStrip1.Size = new System.Drawing.Size(809, 22);
             this.statusStrip1.TabIndex = 3;
             this.statusStrip1.Text = "접속자 :";
             // 
@@ -86,8 +90,9 @@
             this.listBox1.ItemHeight = 15;
             this.listBox1.Location = new System.Drawing.Point(0, 0);
             this.listBox1.Name = "listBox1";
-            this.listBox1.Size = new System.Drawing.Size(126, 324);
+            this.listBox1.Size = new System.Drawing.Size(126, 327);
             this.listBox1.TabIndex = 4;
+            this.listBox1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.ListBox1_MouseDown);
             // 
             // listBox2
             // 
@@ -101,7 +106,7 @@
             this.listBox2.Location = new System.Drawing.Point(3, 7);
             this.listBox2.Name = "listBox2";
             this.listBox2.SelectionMode = System.Windows.Forms.SelectionMode.None;
-            this.listBox2.Size = new System.Drawing.Size(492, 259);
+            this.listBox2.Size = new System.Drawing.Size(488, 259);
             this.listBox2.TabIndex = 5;
             this.listBox2.SelectedIndexChanged += new System.EventHandler(this.ListBox2_SelectedIndexChanged);
             // 
@@ -134,9 +139,9 @@
             // textBox1
             // 
             this.textBox1.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.textBox1.Location = new System.Drawing.Point(0, 303);
+            this.textBox1.Location = new System.Drawing.Point(0, 306);
             this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(645, 23);
+            this.textBox1.Size = new System.Drawing.Size(641, 23);
             this.textBox1.TabIndex = 8;
             this.textBox1.TextChanged += new System.EventHandler(this.TextBox1_TextChanged);
             this.textBox1.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.message_keyDown);
@@ -144,28 +149,13 @@
             // button1
             // 
             this.button1.Anchor = System.Windows.Forms.AnchorStyles.None;
-            this.button1.Location = new System.Drawing.Point(3, 47);
+            this.button1.Location = new System.Drawing.Point(22, 25);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(100, 44);
             this.button1.TabIndex = 9;
             this.button1.Text = "전송";
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
-            // 
-            // comboBox1
-            // 
-            this.comboBox1.FormattingEnabled = true;
-            this.comboBox1.Items.AddRange(new object[] {
-            "공지",
-            "감옥",
-            "석방",
-            "유저 강퇴",
-            "모두 강퇴(리붓)"});
-            this.comboBox1.Location = new System.Drawing.Point(3, 18);
-            this.comboBox1.Name = "comboBox1";
-            this.comboBox1.Size = new System.Drawing.Size(119, 23);
-            this.comboBox1.TabIndex = 10;
-            this.comboBox1.SelectedIndexChanged += new System.EventHandler(this.ComboBox1_SelectedIndexChanged);
             // 
             // radioButton1
             // 
@@ -249,25 +239,99 @@
             this.panel1.Controls.Add(this.listBox2);
             this.panel1.Location = new System.Drawing.Point(144, 37);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(645, 326);
+            this.panel1.Size = new System.Drawing.Size(641, 329);
             this.panel1.TabIndex = 16;
             // 
             // panel3
             // 
+            this.panel3.Controls.Add(this.radioButton_5);
+            this.panel3.Controls.Add(this.radioButton_4);
+            this.panel3.Controls.Add(this.radioButton_3);
+            this.panel3.Controls.Add(this.radioButton_2);
+            this.panel3.Controls.Add(this.radioButton_1);
             this.panel3.Controls.Add(this.panel5);
             this.panel3.Controls.Add(this.panel4);
             this.panel3.Dock = System.Windows.Forms.DockStyle.Right;
-            this.panel3.Location = new System.Drawing.Point(502, 0);
+            this.panel3.Location = new System.Drawing.Point(498, 0);
             this.panel3.Name = "panel3";
-            this.panel3.Size = new System.Drawing.Size(143, 303);
+            this.panel3.Size = new System.Drawing.Size(143, 306);
             this.panel3.TabIndex = 18;
+            // 
+            // radioButton_5
+            // 
+            this.radioButton_5.Appearance = System.Windows.Forms.Appearance.Button;
+            this.radioButton_5.BackColor = System.Drawing.Color.SteelBlue;
+            this.radioButton_5.Location = new System.Drawing.Point(73, 193);
+            this.radioButton_5.Name = "radioButton_5";
+            this.radioButton_5.Size = new System.Drawing.Size(68, 32);
+            this.radioButton_5.TabIndex = 24;
+            this.radioButton_5.TabStop = true;
+            this.radioButton_5.Text = "모두 강퇴";
+            this.radioButton_5.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.radioButton_5.UseVisualStyleBackColor = false;
+            // 
+            // radioButton_4
+            // 
+            this.radioButton_4.Appearance = System.Windows.Forms.Appearance.Button;
+            this.radioButton_4.BackColor = System.Drawing.Color.SkyBlue;
+            this.radioButton_4.Location = new System.Drawing.Point(2, 193);
+            this.radioButton_4.Name = "radioButton_4";
+            this.radioButton_4.Size = new System.Drawing.Size(68, 32);
+            this.radioButton_4.TabIndex = 23;
+            this.radioButton_4.TabStop = true;
+            this.radioButton_4.Text = "강퇴";
+            this.radioButton_4.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.radioButton_4.UseVisualStyleBackColor = false;
+            this.radioButton_4.CheckedChanged += new System.EventHandler(this.RadioButton_4_CheckedChanged);
+            // 
+            // radioButton_3
+            // 
+            this.radioButton_3.Appearance = System.Windows.Forms.Appearance.Button;
+            this.radioButton_3.BackColor = System.Drawing.Color.DarkSeaGreen;
+            this.radioButton_3.ForeColor = System.Drawing.SystemColors.ActiveCaptionText;
+            this.radioButton_3.Location = new System.Drawing.Point(73, 158);
+            this.radioButton_3.Name = "radioButton_3";
+            this.radioButton_3.Size = new System.Drawing.Size(67, 29);
+            this.radioButton_3.TabIndex = 22;
+            this.radioButton_3.TabStop = true;
+            this.radioButton_3.Text = "석방";
+            this.radioButton_3.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.radioButton_3.UseVisualStyleBackColor = false;
+            // 
+            // radioButton_2
+            // 
+            this.radioButton_2.Appearance = System.Windows.Forms.Appearance.Button;
+            this.radioButton_2.BackColor = System.Drawing.Color.Tomato;
+            this.radioButton_2.ForeColor = System.Drawing.SystemColors.ActiveCaptionText;
+            this.radioButton_2.Location = new System.Drawing.Point(3, 159);
+            this.radioButton_2.Name = "radioButton_2";
+            this.radioButton_2.Size = new System.Drawing.Size(67, 28);
+            this.radioButton_2.TabIndex = 21;
+            this.radioButton_2.TabStop = true;
+            this.radioButton_2.Text = "감옥";
+            this.radioButton_2.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.radioButton_2.UseVisualStyleBackColor = false;
+            // 
+            // radioButton_1
+            // 
+            this.radioButton_1.Appearance = System.Windows.Forms.Appearance.Button;
+            this.radioButton_1.BackColor = System.Drawing.Color.SandyBrown;
+            this.radioButton_1.ForeColor = System.Drawing.SystemColors.MenuText;
+            this.radioButton_1.Location = new System.Drawing.Point(3, 132);
+            this.radioButton_1.Margin = new System.Windows.Forms.Padding(3, 3, 3, 0);
+            this.radioButton_1.Name = "radioButton_1";
+            this.radioButton_1.Size = new System.Drawing.Size(137, 24);
+            this.radioButton_1.TabIndex = 20;
+            this.radioButton_1.TabStop = true;
+            this.radioButton_1.Text = "공지";
+            this.radioButton_1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.radioButton_1.UseVisualStyleBackColor = false;
             // 
             // panel5
             // 
-            this.panel5.Controls.Add(this.comboBox1);
             this.panel5.Controls.Add(this.button1);
             this.panel5.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.panel5.Location = new System.Drawing.Point(0, 203);
+            this.panel5.Location = new System.Drawing.Point(0, 206);
             this.panel5.Name = "panel5";
             this.panel5.Size = new System.Drawing.Size(143, 100);
             this.panel5.TabIndex = 19;
@@ -291,14 +355,14 @@
             this.panel2.Controls.Add(this.listBox1);
             this.panel2.Location = new System.Drawing.Point(9, 39);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(126, 324);
+            this.panel2.Size = new System.Drawing.Size(126, 327);
             this.panel2.TabIndex = 17;
             // 
             // MainForm
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Inherit;
             this.AutoScroll = true;
-            this.ClientSize = new System.Drawing.Size(813, 394);
+            this.ClientSize = new System.Drawing.Size(809, 397);
             this.Controls.Add(this.panel2);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.label3);
@@ -337,7 +401,6 @@
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.TextBox textBox1;
         private System.Windows.Forms.Button button1;
-        private System.Windows.Forms.ComboBox comboBox1;
         private System.Windows.Forms.RadioButton radioButton1;
         private System.Windows.Forms.RadioButton radioButton2;
         private System.Windows.Forms.RadioButton radioButton3;
@@ -350,6 +413,11 @@
         private System.Windows.Forms.Panel panel4;
         private System.Windows.Forms.Panel panel5;
         private System.Windows.Forms.ListBox listBox2;
+        private System.Windows.Forms.RadioButton radioButton_2;
+        private System.Windows.Forms.RadioButton radioButton_1;
+        private System.Windows.Forms.RadioButton radioButton_3;
+        private System.Windows.Forms.RadioButton radioButton_5;
+        private System.Windows.Forms.RadioButton radioButton_4;
     }
 }
 
