@@ -329,7 +329,8 @@ namespace SupremePlayServer
 
                             if (plist.IndexOf(d1[0] + ">") != -1)
                             {
-                                if(d1[0].Contains("mon_move") || d1[0].Contains("aggro"))
+                                if(d1[0].Contains("mon_move") || d1[0].Contains("aggro") || d1[0].Contains("mon_damage")
+                                    || d1[0].Contains("player_damage"))
                                     mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage, UserCode)));
                                 else
                                     mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage)));
