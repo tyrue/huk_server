@@ -373,7 +373,7 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.MaximizeBox = false;
-            this.MaximumSize = new System.Drawing.Size(1000, 800);
+            this.MaximumSize = new System.Drawing.Size(1500, 1000);
             this.Name = "MainForm";
             this.Text = "흑부엉의 바람의나라 온라인 서버";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.FormClose);
