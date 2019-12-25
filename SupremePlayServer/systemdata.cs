@@ -61,6 +61,8 @@ namespace SupremePlayServer
             plist.Add("<hp>"); // 몹 체력 공유
             plist.Add("<mon_move>"); // 몬스터 이동 공유
             plist.Add("<aggro>"); // 몬스터 어그로
+            plist.Add("<mon_damage>"); // 몬스터 데미지 표시
+            plist.Add("<player_damage>"); // 플레이어 데미지 표시
             return plist;
         }
     }
