@@ -445,7 +445,6 @@ namespace SupremePlayServer
             String[] data = pkdata.Split(co1, StringSplitOptions.None);
 
             String query = "'";
-            
             try
             {
                 for (int i = 0; i < data.Length; i++)
@@ -467,8 +466,9 @@ namespace SupremePlayServer
                 {
                     // DB Connection
                     conn.Open();
-                    string sql = "";    
+                    string sql = "";
                     sql = "INSERT INTO item VALUES(" + query + ")";
+                    
                     MySqlCommand cmd = new MySqlCommand(sql, conn);
                     cmd.ExecuteNonQuery();
                     conn.Close();
@@ -623,6 +623,122 @@ namespace SupremePlayServer
 
             return d2[0];
         }
+        #endregion
+
+        #region 맵 id에 대한 이름 저장
+        public void SaveMap(String pkdata)
+        {
+            pkdata = splitTag("map_name", pkdata);
+
+            string[] co1 = { " " };
+            String[] data = pkdata.Split(co1, StringSplitOptions.None);
+
+            String query = "'";
+            String u_query = "";
+            try
+            {
+                for (int i = 0; i < data.Length; i++)
+                {
+                    if (data[i].Equals(""))
+                    {
+                        data[i] = "nil";
+                    }
+
+                    query += data[i];
+
+                    if (i != data.Length - 1)
+                        query += "', '";
+                    else
+                        query += "'";
+                }
+
+                using (MySqlConnection conn = new MySqlConnection(DBInfo))
+                {
+                    // DB Connection
+                    conn.Open();
+
+                    string sql = "" +
+                        "SELECT* FROM map_name" +
+                        " WHERE (id = " + data[0] + ")";
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    MySqlDataReader rdr = cmd.ExecuteReader();
+
+                    while (rdr.Read())
+                    {
+                        for (int i = 0; i < rdr.FieldCount; i++)
+                        {
+                            // 필드 이름 받아옴
+                            u_query += rdr.GetName(i) + "='" + data[i] + "'";
+                            if (i != rdr.FieldCount - 1)
+                            {
+                                u_query += ", ";
+                            }
+                        }
+                        break;
+                    }
+
+                    conn.Close();
+                }
+
+                using (MySqlConnection conn = new MySqlConnection(DBInfo))
+                {
+                    // DB Connection
+                    conn.Open();
+                    string sql = "";
+                    if (u_query != "") // DB에 해당 맵의 이벤트가 없다면 새로 추가
+                    {
+                        sql = "" +
+                            "UPDATE map_name" +
+                            " SET " + u_query +
+                            " WHERE (id = " + data[0] + ")";
+                    }
+                    else
+                    {
+                        sql = "INSERT INTO map_name VALUES(" + query + ")";
+                    }
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    cmd.ExecuteNonQuery();
+                    conn.Close();
+                }
+            }
+
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
+            }
+        }
+        #endregion
+
+        #region 맵 이름 전송
+
+        public string SendMap(int id)
+        {
+            try
+            {
+                using (MySqlConnection conn = new MySqlConnection(DBInfo))
+                {
+                    // DB Connection
+                    conn.Open();
+
+                    string sql = "" +
+                        "SELECT name FROM map_name " +
+                        " WHERE id = '" + id + "'";
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    MySqlDataReader rdr = cmd.ExecuteReader();
+
+                    string name = rdr[0].ToString();
+                    rdr.Close();
+                    conn.Close();
+                    return name; 
+                }
+            }
+            catch (Exception e)
+            {
+                //MessageBox.Show(e.Message);
+                return "no";
+            }
+        }
+
         #endregion
     }
 }

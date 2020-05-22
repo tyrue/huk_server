@@ -49,7 +49,7 @@ namespace SupremePlayServer
                 System_DB system_db = new System_DB();
                 system_db.respawnMonster();
 
-                if(t.Contains(":00:00") || t.Contains(":00:01"))
+                if(t.Contains(":00:00"))
                 {
                     listBox2.Items.Add("[" + t + "] 맵의 모든 아이템 삭제");
                     Packet("<chat>맵의 모든 아이템들이 삭제 됩니다.</chat>");
