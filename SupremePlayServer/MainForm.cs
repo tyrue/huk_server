@@ -12,8 +12,8 @@ namespace SupremePlayServer
     {
         public List<UserThread> UserList;
         public Dictionary<String, List<string>> MapUser = new Dictionary<string, List<string>>();
-        
-       
+        System_DB system_db = new System_DB();
+
         public MainForm()
         {
             InitializeComponent();
@@ -33,7 +33,7 @@ namespace SupremePlayServer
 
             // 서버 시작할 때 몹 데이터 정리
             string t = DateTime.Now.ToString();
-            System_DB system_db = new System_DB();
+            
             system_db.DelAllMonster();
             listBox2.Items.Add("<" + t + " 서버 시작>");
             listBox2.Items.Add("[" + t + "] 몬스터 데이터 삭제");
@@ -287,7 +287,7 @@ namespace SupremePlayServer
             listBox1.Items.Clear();
             for (int i = 0; i < UserList.Count; i++)
             {
-                listBox1.Items.Add(UserList[i].UserName + "(" + UserList[i].UserId + ")");
+                listBox1.Items.Add(UserList[i].UserName + "(" + UserList[i].UserId + ")" + ": " + system_db.SendMap(int.Parse(UserList[i].last_map_id)));
             }
         }
 

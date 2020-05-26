@@ -630,8 +630,8 @@ namespace SupremePlayServer
         {
             pkdata = splitTag("map_name", pkdata);
 
-            string[] co1 = { " " };
-            String[] data = pkdata.Split(co1, StringSplitOptions.None);
+            string[] co1 = { "," };
+            String[] data = pkdata.Split(co1, StringSplitOptions.RemoveEmptyEntries);
 
             String query = "'";
             String u_query = "";
@@ -725,8 +725,12 @@ namespace SupremePlayServer
                         " WHERE id = '" + id + "'";
                     MySqlCommand cmd = new MySqlCommand(sql, conn);
                     MySqlDataReader rdr = cmd.ExecuteReader();
-
-                    string name = rdr[0].ToString();
+                    string name = "no";
+                    if (rdr.Read())
+                    {
+                        name = rdr[0].ToString();
+                    }
+                    
                     rdr.Close();
                     conn.Close();
                     return name; 

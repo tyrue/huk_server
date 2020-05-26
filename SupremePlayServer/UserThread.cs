@@ -237,7 +237,7 @@ namespace SupremePlayServer
                             }
                             else
                             {
-                                if(!mainform.MapUser[map_id].Contains(UserCode))
+                                if (!mainform.MapUser[map_id].Contains(UserCode))
                                 {
                                     mainform.MapUser[map_id].Add(UserCode);
                                     SW.WriteLine("<map_player>0</map_player>");
@@ -275,6 +275,14 @@ namespace SupremePlayServer
 
                             last_map_id = map_id;
                         }
+
+                        // 현재 맵 이름 저장
+                        else if (GetMessage.Contains("<map_name>"))
+                        {
+                            System_DB system = new System_DB();
+                            system.SaveMap(GetMessage);
+                        }
+
 
                         // 유저 종료
                         else if (GetMessage.Contains("<9>"))
@@ -329,7 +337,7 @@ namespace SupremePlayServer
 
                             if (plist.IndexOf(d1[0] + ">") != -1)
                             {
-                                if(d1[0].Contains("mon_move") || d1[0].Contains("aggro") || d1[0].Contains("mon_damage")
+                                if (d1[0].Contains("mon_move") || d1[0].Contains("aggro") || d1[0].Contains("mon_damage")
                                     || d1[0].Contains("player_damage") || d1[0].Contains("switches") || d1[0].Contains("variables"))
                                     mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage, UserCode)));
                                 else
