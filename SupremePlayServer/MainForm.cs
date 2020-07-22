@@ -5,13 +5,15 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.IO;
+using Google.Protobuf.Collections;
 
 namespace SupremePlayServer
 {
     public partial class MainForm : Form
     {
         public List<UserThread> UserList;
-        public Dictionary<String, List<string>> MapUser = new Dictionary<string, List<string>>();
+        public Dictionary<int, List<UserThread>> MapUser2;
+        
         System_DB system_db = new System_DB();
 
         public MainForm()
@@ -20,10 +22,6 @@ namespace SupremePlayServer
             
             radioButton1.Select(); // 경험치 이벤트 없음
             radioButton_1.Select(); // 처음에 공지로 미리 선택됨
-
-
-            List<String> a = new List<string> {"0"};
-            MapUser.Add("0", a);
 
             // 타이머 생성 및 시작
             System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
@@ -68,7 +66,10 @@ namespace SupremePlayServer
         {
             // Initialize
             UserList = new List<UserThread>();
+            List<String> a = new List<string> { "0" };
 
+            MapUser2 = new Dictionary<int, List<UserThread>>();
+            
             // Listen New User Connection
             Thread echo_thread = new Thread(Thread_NetWorkListening);
             echo_thread.Start();
@@ -97,6 +98,10 @@ namespace SupremePlayServer
                     userthread.mainform = this;
                     userthread.startClient(client);
                     UserList.Add(userthread);
+
+                    if(!MapUser2.ContainsKey(0))
+                        MapUser2.Add(0, new List<UserThread>());
+                    MapUser2[0].Add(userthread);
                 }
             }
             catch (Exception e)
@@ -136,8 +141,6 @@ namespace SupremePlayServer
                     removethread(UserList[i]);
                 }
             }
-            PlayerCount();
-
             
             if (data.Contains("<chat1>"))
             {
@@ -155,6 +158,51 @@ namespace SupremePlayServer
             }
         }
 
+        // 해당 맵의 유저들에게만 전송하는 패킷
+        public void Map_Packet(String data, int map_id, String userCode = "")
+        {
+            for (int i = 0; i < MapUser2[map_id].Count; i++)
+            {
+                if (!MapUser2[map_id][i].UserCode.Equals("*null*"))
+                {
+                    if (MapUser2[map_id][i].UserCode.Equals(userCode))
+                        continue;
+                    try
+                    {
+                        //MessageBox.Show(data);
+                        MapUser2[map_id][i].SW.WriteLine(data); // 메시지 보내기
+                        MapUser2[map_id][i].SW.Flush();
+                    }
+                    catch (Exception e) // 팅긴걸로 판단
+                    {
+                        removethread(MapUser2[map_id][i]);
+                    }
+                }
+                // 유효하지 않은 유저는 삭제
+                else
+                {
+                    removethread(MapUser2[map_id][i]);
+                }
+            }
+        }
+
+        public void removeMapUser(int map_i, UserThread userThread)
+        {
+            MapUser2[map_i].Remove(userThread);
+            try
+            {
+                if (MapUser2[map_i].Count > 0)
+                {
+                    MapUser2[map_i][0].SW.WriteLine("<map_player>1</map_player>"); // 메시지 보내기
+                    MapUser2[map_i][0].SW.Flush();
+                }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
+            }
+        }
+
         // 유저 리스트에서 제거한다.
         public void removethread(UserThread userthread)
         {
@@ -163,6 +211,9 @@ namespace SupremePlayServer
                 // 접속이 되지 않은 유저 삭제 : 중간에 팅긴 유저에 대한 처리
                 if (!userthread.client.Connected) // 접속이 끊겼는데 접속 되어 있다고 처리되서 계속 오류나고 있음
                 {
+                    int map_i = userthread.last_map_id;
+                    removeMapUser(map_i, userthread);
+
                     if (userthread.UserName != null)
                     {
                         UserList.Remove(userthread);
@@ -185,39 +236,6 @@ namespace SupremePlayServer
                             listBox2.Items.Add("(" + DateTime.Now.ToString() + ") " + userthread.UserName + " 종료");
                             Packet("<chat1>(알림): '" + userthread.UserName + "'님께서 종료하셨습니다.</chat1>");
                             Packet("<9>" + userthread.UserCode + "</9>");
-                        }
-                    }
-
-                    if (MapUser.ContainsKey(userthread.last_map_id))
-                    {
-                        string last = userthread.last_map_id;
-                        if (MapUser[last].Contains(userthread.UserCode))
-                        {
-                            if (MapUser[last].Count >= 2 && MapUser[last].IndexOf(userthread.UserCode) == 0)
-                            {
-                                for (int i = 1; i < UserList.Count; i++)
-                                {
-                                    if (UserList[i].UserCode.Equals(MapUser[last][1]))
-                                    {
-                                        try
-                                        {
-                                            UserList[i].SW.WriteLine("<map_player>1</map_player>"); // 메시지 보내기
-                                            UserList[i].SW.Flush();
-                                            break;
-                                        }
-                                        catch (Exception e) // 팅긴걸로 판단
-                                        {
-                                            //MessageBox.Show(e.ToString());
-                                        }
-                                    }
-                                    // 유효하지 않은 유저는 삭제
-                                    else
-                                    {
-                                        
-                                    }
-                                }
-                            }
-                            MapUser[last].Remove(userthread.UserCode);
                         }
                     }
                 }
@@ -280,14 +298,14 @@ namespace SupremePlayServer
             System.Diagnostics.Process.GetCurrentProcess().Kill();
         }
 
-        private void PlayerCount()
+        public void PlayerCount()
         {
             toolStripStatusLabel2.Text = "접속자 수 : " + UserList.Count;
 
             listBox1.Items.Clear();
             for (int i = 0; i < UserList.Count; i++)
             {
-                listBox1.Items.Add(UserList[i].UserName + "(" + UserList[i].UserId + ")" + ": " + system_db.SendMap(int.Parse(UserList[i].last_map_id)));
+                listBox1.Items.Add(UserList[i].UserName + "(" + UserList[i].UserId + ")" + ": " + UserList[i].map_name);
             }
         }
 

@@ -28,7 +28,8 @@ namespace SupremePlayServer
         List<String> plist;
         public Thread thread = null;
 
-        public String last_map_id = "0";
+        public int last_map_id = 0;
+        public String map_name = "";
         public void startClient(TcpClient clientSocket)
         {
             // Get Packet List
@@ -213,106 +214,47 @@ namespace SupremePlayServer
                             system_db.SendItem(NS, GetMessage);
                         }
 
-                        // 현재 맵에서의 기준이 될 유저 확인
-                        else if (GetMessage.Contains("<map_player>"))
-                        {
-                            System_DB system = new System_DB();
-                            String map_id = system.splitTag("map_player", GetMessage);
-
-                            if (!mainform.MapUser.ContainsKey(map_id))
-                            {
-                                List<String> a = new List<string>
-                                {
-                                    UserCode
-                                };
-                                mainform.MapUser.Add(map_id, a);
-                                SW.WriteLine("<map_player>1</map_player>");
-                                SW.Flush();
-                            }
-                            else if (mainform.MapUser[map_id].Count == 0)
-                            {
-                                mainform.MapUser[map_id].Add(UserCode);
-                                SW.WriteLine("<map_player>1</map_player>");
-                                SW.Flush();
-                            }
-                            else
-                            {
-                                if (!mainform.MapUser[map_id].Contains(UserCode))
-                                {
-                                    mainform.MapUser[map_id].Add(UserCode);
-                                    SW.WriteLine("<map_player>0</map_player>");
-                                    SW.Flush();
-                                }
-                            }
-
-                            // 여기서 에러
-
-                            if (mainform.MapUser[last_map_id].Count >= 2 && mainform.MapUser[last_map_id].IndexOf(UserCode) == 0)
-                            {
-                                for (int i = 1; i < mainform.UserList.Count; i++)
-                                {
-                                    if (mainform.UserList[i].UserCode.Equals(mainform.MapUser[last_map_id][1]))
-                                    {
-                                        try
-                                        {
-                                            mainform.UserList[i].SW.WriteLine("<map_player>1</map_player>"); // 메시지 보내기
-                                            mainform.UserList[i].SW.Flush();
-                                            break;
-                                        }
-                                        catch (Exception e) // 팅긴걸로 판단
-                                        {
-                                            MessageBox.Show(e.ToString());
-                                        }
-                                    }
-                                    // 유효하지 않은 유저는 삭제
-                                    else
-                                    {
-
-                                    }
-                                }
-                            }
-                            mainform.MapUser[last_map_id].Remove(UserCode);
-
-                            last_map_id = map_id;
-                        }
-
+                        // 유저가 맵을 옮김 -> 바뀐 맵에서 기준이 되는지 확인
                         // 현재 맵 이름 저장
                         else if (GetMessage.Contains("<map_name>"))
                         {
                             System_DB system = new System_DB();
                             system.SaveMap(GetMessage);
+
+                            string data = system.splitTag("map_name", GetMessage);
+                            string[] co1 = { "," };
+                            String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
+
+                            int map_id = int.Parse(data2[0]);
+                            if(!mainform.MapUser2.ContainsKey(map_id)) // 해당 맵에 아무도 없었다면?
+                            {
+                                mainform.MapUser2.Add(map_id, new List<UserThread>());
+                                SW.WriteLine("<map_player>1</map_player>");
+                                SW.Flush();
+                            }
+                            else if(mainform.MapUser2[map_id].Count == 0)
+                            {
+                                SW.WriteLine("<map_player>1</map_player>");
+                            }
+                            else
+                            {
+                                SW.WriteLine("<map_player>0</map_player>");
+                            }
+                            mainform.MapUser2[map_id].Add(this);
+
+                            // 이전에 있었던 리스트에서 제거함
+                            mainform.removeMapUser(last_map_id, this);
+                            last_map_id = map_id;
+                            map_name = system.SendMap(last_map_id);
+
+                            mainform.PlayerCount();
                         }
 
 
                         // 유저 종료
                         else if (GetMessage.Contains("<9>"))
                         {
-                            if (mainform.MapUser[last_map_id].Count >= 2 && mainform.MapUser[last_map_id].IndexOf(UserCode) == 0)
-                            {
-                                for (int i = 1; i < mainform.UserList.Count; i++)
-                                {
-                                    if (mainform.UserList[i].UserCode.Equals(mainform.MapUser[last_map_id][1]))
-                                    {
-                                        try
-                                        {
-                                            mainform.UserList[i].SW.WriteLine("<map_player>1</map_player>"); // 메시지 보내기
-                                            mainform.UserList[i].SW.Flush();
-                                            break;
-                                        }
-                                        catch (Exception e) // 팅긴걸로 판단
-                                        {
-                                            MessageBox.Show(e.ToString());
-                                        }
-                                    }
-                                    // 유효하지 않은 유저는 삭제
-                                    else
-                                    {
-
-                                    }
-                                }
-                            }
-                            mainform.MapUser[last_map_id].Remove(UserCode);
-
+                            mainform.removeMapUser(last_map_id, this);
                             System_DB system = new System_DB();
                             if (!UserCode.Equals("*null*") && system.splitTag("9", GetMessage).Equals(UserCode))
                             {
@@ -339,7 +281,7 @@ namespace SupremePlayServer
                             {
                                 if (d1[0].Contains("mon_move") || d1[0].Contains("aggro") || d1[0].Contains("mon_damage")
                                     || d1[0].Contains("player_damage") || d1[0].Contains("switches") || d1[0].Contains("variables"))
-                                    mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage, UserCode)));
+                                    mainform.Invoke((MethodInvoker)(() => mainform.Map_Packet(GetMessage, last_map_id, UserCode)));
                                 else
                                     mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage)));
                             }
