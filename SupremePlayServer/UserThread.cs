@@ -5,6 +5,7 @@ using System.IO;
 using System.Net.Sockets;
 using System.Threading;
 using System.Windows.Forms;
+using System.Linq;
 
 namespace SupremePlayServer
 {
@@ -30,6 +31,17 @@ namespace SupremePlayServer
 
         public int last_map_id = 0;
         public String map_name = "";
+
+        string[] map_message = 
+        {
+            "mon_move",
+            "aggro",
+            "mon_damage",
+            "player_damage",
+            "enemy_dead",
+            "nptgain",
+            "partyhill"
+        };
         public void startClient(TcpClient clientSocket)
         {
             // Get Packet List
@@ -170,6 +182,16 @@ namespace SupremePlayServer
                             mainform.Invoke((MethodInvoker)(() => mainform.Packet("<5 " + UserCode + ">" + d1[0])));
                         }
 
+                        // 현재 유저의 정보를 같은 맵 유저에게 보냄
+                        else if (GetMessage.Contains("<m5>"))
+                        {
+                           
+                            string[] co1 = { "<m5>" };
+                            String[] d1 = GetMessage.Split(co1, StringSplitOptions.RemoveEmptyEntries);
+
+                            mainform.Invoke((MethodInvoker)(() => mainform.Map_Packet("<5 " + UserCode + ">" + d1[0], last_map_id, UserCode)));
+                        }
+
                         // 유저 데이터 로드
                         else if (GetMessage.Contains("<dtloadreq>"))
                         {
@@ -279,11 +301,10 @@ namespace SupremePlayServer
 
                             if (plist.IndexOf(d1[0] + ">") != -1)
                             {
-                                if (d1[0].Contains("mon_move") || d1[0].Contains("aggro") || d1[0].Contains("mon_damage")
-                                    || d1[0].Contains("player_damage") || d1[0].Contains("switches") || d1[0].Contains("variables"))
+                                if (map_message.Contains(d1[0]))
                                     mainform.Invoke((MethodInvoker)(() => mainform.Map_Packet(GetMessage, last_map_id, UserCode)));
                                 else
-                                    mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage)));
+                                    mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage, UserCode)));
                             }
                         }
                     }

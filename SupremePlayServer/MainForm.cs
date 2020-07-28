@@ -193,13 +193,16 @@ namespace SupremePlayServer
             {
                 if (MapUser2[map_i].Count > 0)
                 {
-                    MapUser2[map_i][0].SW.WriteLine("<map_player>1</map_player>"); // 메시지 보내기
-                    MapUser2[map_i][0].SW.Flush();
+                    if(MapUser2[map_i][0].thread.IsAlive)
+                    {
+                        MapUser2[map_i][0].SW.WriteLine("<map_player>1</map_player>"); // 메시지 보내기
+                        MapUser2[map_i][0].SW.Flush();
+                    }
                 }
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.ToString());
+                //MessageBox.Show(e.ToString());
             }
         }
 
