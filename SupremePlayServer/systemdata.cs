@@ -63,6 +63,7 @@ namespace SupremePlayServer
             plist.Add("<aggro>"); // 몬스터 어그로
             plist.Add("<mon_damage>"); // 몬스터 데미지 표시
             plist.Add("<player_damage>"); // 플레이어 데미지 표시
+            plist.Add("<map_chat>"); // 플레이어 말풍선 표시
             return plist;
         }
     }

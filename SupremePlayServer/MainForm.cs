@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.IO;
 using Google.Protobuf.Collections;
+using System.Diagnostics;
 
 namespace SupremePlayServer
 {
@@ -188,7 +189,7 @@ namespace SupremePlayServer
 
         public void removeMapUser(int map_i, UserThread userThread)
         {
-            MapUser2[map_i].Remove(userThread);
+            MapUser2[map_i].Remove(userThread);   
             try
             {
                 if (MapUser2[map_i].Count > 0)

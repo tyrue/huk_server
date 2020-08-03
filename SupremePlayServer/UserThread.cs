@@ -34,13 +34,15 @@ namespace SupremePlayServer
 
         string[] map_message = 
         {
-            "mon_move",
-            "aggro",
-            "mon_damage",
-            "player_damage",
-            "enemy_dead",
-            "nptgain",
-            "partyhill"
+            "<mon_move",
+            "<aggro",
+            "<mon_damage",
+            "<player_damage",
+            "<enemy_dead",
+            "<nptgain",
+            "<partyhill",
+            "<npt_move",
+            "<map_chat"
         };
         public void startClient(TcpClient clientSocket)
         {
@@ -185,7 +187,6 @@ namespace SupremePlayServer
                         // 현재 유저의 정보를 같은 맵 유저에게 보냄
                         else if (GetMessage.Contains("<m5>"))
                         {
-                           
                             string[] co1 = { "<m5>" };
                             String[] d1 = GetMessage.Split(co1, StringSplitOptions.RemoveEmptyEntries);
 
@@ -301,8 +302,11 @@ namespace SupremePlayServer
 
                             if (plist.IndexOf(d1[0] + ">") != -1)
                             {
+                                
                                 if (map_message.Contains(d1[0]))
+                                {
                                     mainform.Invoke((MethodInvoker)(() => mainform.Map_Packet(GetMessage, last_map_id, UserCode)));
+                                }
                                 else
                                     mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage, UserCode)));
                             }
