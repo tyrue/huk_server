@@ -42,7 +42,8 @@ namespace SupremePlayServer
             "<nptgain",
             "<partyhill",
             "<npt_move",
-            "<map_chat"
+            "<map_chat",
+            "<27"
         };
         public void startClient(TcpClient clientSocket)
         {
