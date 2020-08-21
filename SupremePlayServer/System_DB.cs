@@ -160,7 +160,7 @@ namespace SupremePlayServer
             string[] co1 = {"|"};
             String[] data = pkdata.Split(co1, StringSplitOptions.None);
             
-            if (data.Length == 29 || UserId.Equals(""))
+            if (UserId.Equals(""))
                 return;
 
             String query = "'" + UserId + "', '";
@@ -271,7 +271,10 @@ namespace SupremePlayServer
                     while (rdr.Read())
                     {
                         for (int i = 0; i < rdr.FieldCount; i++)
-                          SW.WriteLine("<dataload>" + rdr[i].ToString() + "</dataload>");
+                        {
+                            SW.WriteLine("<dataload>" + rdr[i].ToString() + "</dataload>");
+                        }
+                        SW.WriteLine("<dataLoadEnd>ok</dataLoadEnd>");
                     }
 
                     SW.Flush();
