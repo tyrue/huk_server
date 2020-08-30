@@ -17,6 +17,10 @@ namespace SupremePlayServer
         
         System_DB system_db = new System_DB();
 
+        public int count_down = 0; // 리붓 카운트 다운
+        System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
+        
+
         public MainForm()
         {
             InitializeComponent();
@@ -25,10 +29,10 @@ namespace SupremePlayServer
             radioButton_1.Select(); // 처음에 공지로 미리 선택됨
 
             // 타이머 생성 및 시작
-            System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
-            timer.Interval = 1000; // 몹 리젠 시간
-            timer.Tick += new EventHandler(timer_tick);
-            timer.Start();
+            System.Windows.Forms.Timer timer2 = new System.Windows.Forms.Timer();
+            timer2.Interval = 1000; // 몹 리젠 시간
+            timer2.Tick += new EventHandler(timer_tick);
+            timer2.Start();
 
             // 서버 시작할 때 몹 데이터 정리
             string t = DateTime.Now.ToString();
@@ -61,7 +65,29 @@ namespace SupremePlayServer
                 MessageBox.Show(e.ToString());
             }
         }
-        
+
+        void timer_tick2(object sender, EventArgs e) // 리붓용 타이머 이벤트
+        {
+            try
+            {
+                count_down--;
+                textBox2.Text = count_down.ToString();
+                Packet("<chat>" + count_down + "초 후 리붓합니다. 안전한 곳으로 이동하시길 바랍니다.</chat>");
+                listBox2.Items.Add("(" + DateTime.Now.ToString() + ") 리붓 " + count_down + "초 전");
+                if (count_down <= 0) // 전체 강퇴
+                {
+                    Packet("<ki>모두,비바람이 휘몰아치고 있습니다. 잠시만 기다려 주세요.,</ki>");
+                    listBox2.Items.Add("(" + DateTime.Now.ToString() + ") 리붓");
+                    textBox2.Text = "";
+                    timer.Enabled = false;
+                    timer.Stop();
+                }
+            }
+            catch
+            {
+                MessageBox.Show(e.ToString());
+            }
+        }
 
         private void Form1_Load(object sender, EventArgs e)
         {
@@ -142,7 +168,7 @@ namespace SupremePlayServer
                     removethread(UserList[i]);
                 }
             }
-            
+
             if (data.Contains("<chat1>"))
             {
                 string[] word = splitTag("chat1", data).Split(',');
@@ -518,6 +544,19 @@ namespace SupremePlayServer
                     listBox2.Items.Add("(" + DateTime.Now.ToString() + ") " + name + " 강퇴");
                     textBox1.Text = "";
                 }
+            }
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            if(int.Parse(textBox2.Text) > 0)
+            {
+                timer = new System.Windows.Forms.Timer();
+                timer.Interval = 1000; // 몹 리젠 시간
+                count_down = int.Parse(textBox2.Text);
+                timer.Enabled = true;
+                timer.Tick += timer_tick2;
+                timer.Start();
             }
         }
     }

@@ -177,6 +177,15 @@ namespace SupremePlayServer
                         }
 
                         // 현재 유저의 정보를 모든 유저에게 보냄
+                        else if (GetMessage.Contains("<chat>"))
+                        {
+                            string[] co1 = { "<chat>" };
+                            String[] d1 = GetMessage.Split(co1, StringSplitOptions.RemoveEmptyEntries);
+
+                            mainform.Invoke((MethodInvoker)(() => mainform.Packet("<chat>" + d1[0])));
+                        }
+
+                        // 현재 유저의 정보를 모든 유저에게 보냄
                         else if (GetMessage.Contains("<5>"))
                         {
                             string[] co1 = { "<5>" };
