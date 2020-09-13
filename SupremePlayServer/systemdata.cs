@@ -64,6 +64,8 @@ namespace SupremePlayServer
             plist.Add("<mon_damage>"); // 몬스터 데미지 표시
             plist.Add("<player_damage>"); // 플레이어 데미지 표시
             plist.Add("<map_chat>"); // 플레이어 말풍선 표시
+            plist.Add("<attack_effect>"); // pvp 평타
+            plist.Add("<skill_effect>"); // pvp 스킬
             return plist;
         }
     }
