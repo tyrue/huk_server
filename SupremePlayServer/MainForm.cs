@@ -20,6 +20,7 @@ namespace SupremePlayServer
         public int count_down = 0; // 리붓 카운트 다운
         System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
         
+        
 
         public MainForm()
         {
@@ -229,7 +230,7 @@ namespace SupremePlayServer
             }
             catch (Exception e)
             {
-                //MessageBox.Show(e.ToString());
+                MessageBox.Show(e.ToString());
             }
         }
 
@@ -294,7 +295,7 @@ namespace SupremePlayServer
             }
             catch (Exception e)
             {
-                //MessageBox.Show(e.ToString());
+                MessageBox.Show(e.ToString());
             }
 
             return check;
