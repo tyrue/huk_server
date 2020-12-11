@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Windows.Forms;
 using System.Linq;
+using Org.BouncyCastle.Utilities;
 
 namespace SupremePlayServer
 {
@@ -68,7 +69,7 @@ namespace SupremePlayServer
             NS = client.GetStream(); // 소켓에서 메시지를 가져오는 스트림
             SR = new StreamReader(NS, Encoding.UTF8); // Get message
             SW = new StreamWriter(NS, Encoding.UTF8); // Send message
-
+            
             string GetMessage = string.Empty;
             try
             {
@@ -77,13 +78,12 @@ namespace SupremePlayServer
                     while (client.Connected) //클라이언트 메시지받기
                     {
                         GetMessage = SR.ReadLine();
-
                         // Log
                         /*
                         if (mainform != null)
                             mainform.label1.Invoke((MethodInvoker)(() => mainform.label1.Text += GetMessage + "\n"));
                          * */
-
+                        //MessageBox.Show(GetMessage);
                         // Authorization 인증
                         if (GetMessage.Contains("<0>"))
                         {
@@ -191,7 +191,7 @@ namespace SupremePlayServer
                             string[] co1 = { "<5>" };
                             String[] d1 = GetMessage.Split(co1, StringSplitOptions.RemoveEmptyEntries);
 
-                            mainform.Invoke((MethodInvoker)(() => mainform.Packet("<5 " + UserCode + ">" + d1[0])));
+                            mainform.Invoke((MethodInvoker)(() => mainform.Packet("<5 " + UserCode + ">" + d1[0], UserCode)));
                         }
 
                         // 현재 유저의 정보를 같은 맵 유저에게 보냄
@@ -263,7 +263,6 @@ namespace SupremePlayServer
                             {
                                 mainform.MapUser2.Add(map_id, new List<UserThread>());
                                 SW.WriteLine("<map_player>1</map_player>");
-                                SW.Flush();
                             }
                             else if(mainform.MapUser2[map_id].Count == 0)
                             {
@@ -273,6 +272,7 @@ namespace SupremePlayServer
                             {
                                 SW.WriteLine("<map_player>0</map_player>");
                             }
+                            SW.Flush();
                             mainform.MapUser2[map_id].Add(this);
 
                             // 이전에 있었던 리스트에서 제거함
