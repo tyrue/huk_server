@@ -12,20 +12,18 @@ namespace SupremePlayServer
 {
     public partial class MainForm : Form
     {
+        public systemdata sd;
         public List<UserThread> UserList;
         public Dictionary<int, List<UserThread>> MapUser2;
         
         System_DB system_db = new System_DB();
-
         public int count_down = 0; // 리붓 카운트 다운
         System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
         
-        
-
         public MainForm()
         {
+            sd = new systemdata();
             InitializeComponent();
-            
             radioButton1.Select(); // 경험치 이벤트 없음
             radioButton_1.Select(); // 처음에 공지로 미리 선택됨
 
@@ -37,8 +35,6 @@ namespace SupremePlayServer
 
             // 서버 시작할 때 몹 데이터 정리
             string t = DateTime.Now.ToString();
-            
-            system_db.DelAllMonster();
             listBox2.Items.Add("<" + t + " 서버 시작>");
             listBox2.Items.Add("[" + t + "] 몬스터 데이터 삭제");
         }
@@ -50,15 +46,21 @@ namespace SupremePlayServer
                 string t = DateTime.Now.ToString("HH:mm:ss");
                 label3.Text = "현재 시간 : " + t;
                 // 초당 몬스터 db에서 체력 0인 몹의 리젠 시간을 줄인다.
-                System_DB system_db = new System_DB();
-                system_db.respawnMonster();
+                List<string> list = sd.respawnMonster();
+                if(list.Count > 0)
+                {
+                    foreach (var s in list)
+                    {
+                        Packet("<respawn>" + s + "</respawn>");
+                    }
+                }
 
                 if(t.Contains(":00:00"))
                 {
                     listBox2.Items.Add("[" + t + "] 맵의 모든 아이템 삭제");
                     Packet("<chat>맵의 모든 아이템들이 삭제 됩니다.</chat>");
 
-                    system_db.DelAllItem();
+                    sd.DelAllItem();
                 }
             }
             catch
@@ -331,6 +333,7 @@ namespace SupremePlayServer
 
         public void PlayerCount()
         {
+            CheckForIllegalCrossThreadCalls = false;
             toolStripStatusLabel2.Text = "접속자 수 : " + UserList.Count;
 
             listBox1.Items.Clear();

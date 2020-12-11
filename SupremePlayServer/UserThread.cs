@@ -26,7 +26,7 @@ namespace SupremePlayServer
         public String UserName;
 
         // Get Packet List
-        systemdata sd = new systemdata();
+        systemdata sd;
         List<String> plist;
         public Thread thread = null;
 
@@ -48,6 +48,7 @@ namespace SupremePlayServer
         };
         public void startClient(TcpClient clientSocket)
         {
+            sd = mainform.sd;
             // Get Packet List
             plist = sd.getAllpacketList();
 
@@ -213,38 +214,45 @@ namespace SupremePlayServer
                         // 몬스터 데이터 저장
                         else if (GetMessage.Contains("<monster>"))
                         {
-                            //MessageBox.Show("몬스터 정보 저장");
-                            System_DB system_db = new System_DB();
-                            system_db.SaveMonster(GetMessage);
+                            sd.SaveMonster(splitTag("monster", GetMessage));
                         }
 
                         // 몬스터 데이터 로드
                         else if (GetMessage.Contains("<req_monster>"))
                         {
                             //MessageBox.Show("몬스터 정보 요청");
-                            System_DB system_db = new System_DB();
-                            system_db.SendMonster(NS, GetMessage);
+                            if (!sd.monster_data.ContainsKey(last_map_id)) continue;
+                            List<Monster> da = sd.monster_data[last_map_id];
+                            foreach(var d in da)
+                            {
+                                string s = d.map_id + "," + d.id + "," + d.hp + "," + d.x + "," + d.y + "," + d.direction + "," + d.respawn;
+                                SW.WriteLine("<req_monster>" + s + "</req_monster>");
+                            }
+                            SW.Flush();
                         }
 
                         // DB에 아이템 데이터 저장
                         else if (GetMessage.Contains("<map_item>"))
                         {
-                            System_DB system_db = new System_DB();
-                            system_db.SaveItem(GetMessage);
+                            sd.SaveItem(splitTag("map_item", GetMessage));
                         }
 
                         // DB에 아이템 데이터 삭제
                         else if (GetMessage.Contains("<del_item>"))
                         {
-                            System_DB system_db = new System_DB();
-                            system_db.DelItem(GetMessage);
+                            sd.DelItem(splitTag("del_item", GetMessage));
                         }
 
                         // 현재 맵의 아이템 정보 전달
                         else if (GetMessage.Contains("<req_item>"))
                         {
-                            System_DB system_db = new System_DB();
-                            system_db.SendItem(NS, GetMessage);
+                            if (!sd.item_data.ContainsKey(last_map_id)) continue;
+                            List<Item> da = sd.item_data[last_map_id];
+                            foreach (var d in da)
+                            {
+                                SW.WriteLine("<drop_create>" + d.map_id + "," + d.id + "," + d.x + "," + d.y + "</drop_create>");
+                            }
+                            SW.Flush();
                         }
 
                         // 유저가 맵을 옮김 -> 바뀐 맵에서 기준이 되는지 확인
@@ -278,8 +286,7 @@ namespace SupremePlayServer
                             // 이전에 있었던 리스트에서 제거함
                             mainform.removeMapUser(last_map_id, this);
                             last_map_id = map_id;
-                            map_name = system.SendMap(last_map_id);
-
+                            map_name = sd.SendMap(last_map_id);
                             mainform.PlayerCount();
                         }
 
@@ -335,6 +342,17 @@ namespace SupremePlayServer
                 client.Close();
                 NS.Close();
             }
+        }
+
+        public String splitTag(String tag, String data)
+        {
+            string[] co1 = { "<" + tag + ">" };
+            String[] d1 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
+
+            string[] co2 = { "</" + tag + ">" };
+            String[] d2 = d1[0].Split(co2, StringSplitOptions.RemoveEmptyEntries);
+
+            return d2[0];
         }
     }
 }

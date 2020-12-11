@@ -85,6 +85,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Item.cs" />
+    <Compile Include="Monster.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
