@@ -15,6 +15,7 @@ namespace SupremePlayServer
         public int hp;
         public int direction;
         public int respawn;
+        public bool dead;
 
         public Monster()
         {
@@ -25,6 +26,7 @@ namespace SupremePlayServer
             hp = 0;
             direction = 0;
             respawn = 0;
+            dead = false;
         }
     }
 }

@@ -111,6 +111,7 @@ namespace SupremePlayServer
                     ii.y = int.Parse(d[4]);
                     ii.direction = int.Parse(d[5]);
                     ii.respawn = int.Parse(d[6]);
+                    ii.dead = ii.hp <= 0 ? true : false;
                 }
                 else
                 {
@@ -128,6 +129,7 @@ namespace SupremePlayServer
                 m.y = int.Parse(d[4]);
                 m.direction = int.Parse(d[5]);
                 m.respawn = int.Parse(d[6]);
+                m.dead = m.hp <= 0 ? true : false;
                 monster_data[m.map_id].Add(m);
             }
         }
@@ -150,12 +152,12 @@ namespace SupremePlayServer
         public void DelItem(string data)
         {
             string[] s = data.Split(',');
-
+            if (!item_data.ContainsKey(int.Parse(s[0]))) return;
             var d = from i in item_data[int.Parse(s[0])]
                     where (i.map_id == int.Parse(s[0]) && i.x == int.Parse(s[2]) && i.y == int.Parse(s[3]))
                     select i;
-
-            item_data[int.Parse(s[0])].Remove(d.First());
+            if(d != null && d.Count() > 0)
+                item_data[int.Parse(s[0])].Remove(d.First());
         }
 
         public string SendMap(int id)
@@ -170,12 +172,14 @@ namespace SupremePlayServer
             {
                 foreach(var d in data.Value)
                 {
+                    if (!d.dead) continue;
                     if (d.respawn > 0) d.respawn -= 60;
                     if (d.respawn < 0) d.respawn = 0;
                     if (d.respawn == 0)
                     {
                         // # 맵 id, 몹id, 몹 hp, x, y, 방향, 딜레이 시간
                         string s = d.map_id + "," + d.id + "," + d.x + "," + d.y + "," + d.direction;
+                        d.dead = false;
                         list.Add(s);
                     }
                 }

@@ -70,7 +70,6 @@ namespace SupremePlayServer
                             string sql = "INSERT INTO user VALUES('" + d1[0] + "', '" + d1[1] + "', '" + d1[2] + "', now())";
                             MySqlCommand cmd = new MySqlCommand(sql, conn);
                             cmd.ExecuteNonQuery();
-                            
                             SW.WriteLine("<regist>success</regist>");
                         }
                     }
@@ -155,6 +154,7 @@ namespace SupremePlayServer
 
         public void SaveData(String pkdata, String UserId)
         {
+            if (UserId == null) return;
             pkdata = splitTag("userdata", pkdata);
             
             string[] co1 = {"|"};

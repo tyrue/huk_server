@@ -15,10 +15,11 @@ namespace SupremePlayServer
         public systemdata sd;
         public List<UserThread> UserList;
         public Dictionary<int, List<UserThread>> MapUser2;
-        
         System_DB system_db = new System_DB();
         public int count_down = 0; // 리붓 카운트 다운
         System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
+        public int exe_event = 0;
+        public int max_user_name = 10; // 전체 인원 제한
         
         public MainForm()
         {
@@ -112,7 +113,6 @@ namespace SupremePlayServer
         {
             TcpListener Listener = null;
             TcpClient client = null;
-
             try
             {
                 Listener = new TcpListener(IPAddress.Any, Int32.Parse(Properties.Resources.PORT));
@@ -122,14 +122,14 @@ namespace SupremePlayServer
                 {
                     // Accept New Tcp Client
                     client = Listener.AcceptTcpClient();
-
                     // New Client User Thread
                     UserThread userthread = new UserThread();
                     userthread.mainform = this;
                     userthread.startClient(client);
+                    
                     UserList.Add(userthread);
 
-                    if(!MapUser2.ContainsKey(0))
+                    if (!MapUser2.ContainsKey(0))
                         MapUser2.Add(0, new List<UserThread>());
                     MapUser2[0].Add(userthread);
                 }
@@ -446,6 +446,20 @@ namespace SupremePlayServer
             if (e.KeyChar == '\r')
             {
                 this.button1_Click(sender, e);
+            }
+        }
+
+        private void exe_event_send(object sender, KeyPressEventArgs e)
+        {
+            if (e.KeyChar == '\r')
+            {
+                int n = -1;
+                if(int.TryParse(exp_event_num.Text, out n))
+                {
+                    Packet("<exp_event> " + exp_event_num.Text + " </exp_event>");
+                    listBox2.Items.Add("[" + DateTime.Now.ToString() + "] 경험치 " + n +"배 이벤트 시작");
+                    exe_event = n;
+                }
             }
         }
 

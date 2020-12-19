@@ -79,6 +79,7 @@ namespace SupremePlayServer
                     while (client.Connected) //클라이언트 메시지받기
                     {
                         GetMessage = SR.ReadLine();
+                        if (GetMessage == null) continue;
                         // Log
                         /*
                         if (mainform != null)
@@ -124,6 +125,13 @@ namespace SupremePlayServer
                             // 로긴 성공
                             else if (resultcode == 2)
                             {
+                                if(mainform.UserList.Count > mainform.max_user_name)
+                                {
+                                    SW.WriteLine("<user_limit>서버 유저 수 제한입니다. 다음에 시도해주세요.</user_limit>"); // 메시지 보내기
+                                    SW.Flush();
+                                    continue;
+                                }
+
                                 SW.WriteLine("<login>allow," + words[0] + "</login>");
 
                                 // Set UserName, UserId
@@ -166,14 +174,17 @@ namespace SupremePlayServer
                             }
                             catch (Exception e)
                             {
-                                MessageBox.Show(e.ToString());
+                                //MessageBox.Show();
                             }
                         }
 
                         // 경험치 이벤트 확인
                         else if (GetMessage.Contains("<exp_event>"))
                         {
-                            SW.WriteLine("<exp_event>" + mainform.radioSelected().ToString() + "</exp_event>");
+                            int n = 0;
+                            n = mainform.radioSelected();
+                            if (mainform.exe_event > 0) n = mainform.exe_event;
+                            SW.WriteLine("<exp_event>" + n + "</exp_event>");
                             SW.Flush();
                         }
 
