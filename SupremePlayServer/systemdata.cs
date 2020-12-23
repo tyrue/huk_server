@@ -86,26 +86,23 @@ namespace SupremePlayServer
         {
             string[] d = data.Split(',');
             bool sw = false;
-            if (!monster_data.ContainsKey(int.Parse(d[0])))
+            int id = int.Parse(d[0]);
+            if (!monster_data.ContainsKey(id))
             {
-                monster_data[int.Parse(d[0])] = new List<Monster>();
+                monster_data[id] = new List<Monster>();
                 sw = false;
             }
             else
             {
                 Monster ii = null;
-                foreach (var m in monster_data[int.Parse(d[0])])
-                {
-                    if(m.map_id == int.Parse(d[0]) && m.id == int.Parse(d[1]))
-                    {
-                        ii = m;
-                        break;
-                    }
-                }
 
-                if (ii != null)
+                var temp = from i in monster_data[id]
+                        where (i.id == int.Parse(d[1]))
+                        select i;
+                if (temp != null && temp.Count() > 0)
                 {
                     sw = true;
+                    ii = temp.First();
                     ii.hp = int.Parse(d[2]);
                     ii.x = int.Parse(d[3]);
                     ii.y = int.Parse(d[4]);
@@ -122,7 +119,7 @@ namespace SupremePlayServer
             if(!sw)
             {
                 Monster m = new Monster();
-                m.map_id = int.Parse(d[0]);
+                m.map_id = id;
                 m.id = int.Parse(d[1]);
                 m.hp = int.Parse(d[2]);
                 m.x = int.Parse(d[3]);
@@ -162,26 +159,32 @@ namespace SupremePlayServer
 
         public string SendMap(int id)
         {
-            return map_data[id];
+            if (map_data.ContainsKey(id)) return map_data[id];
+            else
+            {
+                map_data = system_db.SendMap();
+                if (map_data.ContainsKey(id)) return map_data[id];
+                else return "null";
+            }
         }
 
-        public List<string> respawnMonster()
+        public List<string> respawnMonster2()
         {
             List<string> list = new List<string>();
-            foreach(var data in monster_data)
+            var d = from i in monster_data
+                    from ii in i.Value
+                    where (ii.respawn > 0 && ii.dead)
+                    select ii;
+
+            foreach (var data in d)
             {
-                foreach(var d in data.Value)
+                data.respawn -= 60;
+                if (data.respawn <= 0)
                 {
-                    if (!d.dead) continue;
-                    if (d.respawn > 0) d.respawn -= 60;
-                    if (d.respawn < 0) d.respawn = 0;
-                    if (d.respawn == 0)
-                    {
-                        // # 맵 id, 몹id, 몹 hp, x, y, 방향, 딜레이 시간
-                        string s = d.map_id + "," + d.id + "," + d.x + "," + d.y + "," + d.direction;
-                        d.dead = false;
-                        list.Add(s);
-                    }
+                    data.respawn = 0;
+                    string s = data.map_id + "," + data.id + "," + data.x + "," + data.y + "," + data.direction;
+                    data.dead = false;
+                    list.Add(s);
                 }
             }
             return list;

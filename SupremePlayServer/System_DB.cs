@@ -320,7 +320,7 @@ namespace SupremePlayServer
             string[] co1 = { "," };
             String[] data = pkdata.Split(co1, StringSplitOptions.RemoveEmptyEntries);
 
-            String query = "'";
+            String query = "\"";
             String u_query = "";
             try
             {
@@ -334,9 +334,9 @@ namespace SupremePlayServer
                     query += data[i];
 
                     if (i != data.Length - 1)
-                        query += "', '";
+                        query += "\", \"";
                     else
-                        query += "'";
+                        query += "\"";
                 }
 
                 using (MySqlConnection conn = new MySqlConnection(DBInfo))
@@ -355,7 +355,7 @@ namespace SupremePlayServer
                         for (int i = 0; i < rdr.FieldCount; i++)
                         {
                             // 필드 이름 받아옴
-                            u_query += rdr.GetName(i) + "='" + data[i] + "'";
+                            u_query += rdr.GetName(i) + "=\"" + data[i] + "\"";
                             if (i != rdr.FieldCount - 1)
                             {
                                 u_query += ", ";

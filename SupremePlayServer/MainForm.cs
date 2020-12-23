@@ -35,9 +35,9 @@ namespace SupremePlayServer
             timer2.Start();
 
             // 서버 시작할 때 몹 데이터 정리
-            string t = DateTime.Now.ToString();
-            listBox2.Items.Add("<" + t + " 서버 시작>");
-            listBox2.Items.Add("[" + t + "] 몬스터 데이터 삭제");
+            write_log("------------------------------");
+            write_log("서버 시작");
+            write_log("몬스터 데이터 삭제");
         }
 
         void timer_tick(object sender, EventArgs e)
@@ -47,7 +47,7 @@ namespace SupremePlayServer
                 string t = DateTime.Now.ToString("HH:mm:ss");
                 label3.Text = "현재 시간 : " + t;
                 // 초당 몬스터 db에서 체력 0인 몹의 리젠 시간을 줄인다.
-                List<string> list = sd.respawnMonster();
+                List<string> list = sd.respawnMonster2();
                 if(list.Count > 0)
                 {
                     foreach (var s in list)
@@ -58,7 +58,7 @@ namespace SupremePlayServer
 
                 if(t.Contains(":00:00"))
                 {
-                    listBox2.Items.Add("[" + t + "] 맵의 모든 아이템 삭제");
+                    write_log("맵의 모든 아이템 삭제");
                     Packet("<chat>맵의 모든 아이템들이 삭제 됩니다.</chat>");
 
                     sd.DelAllItem();
@@ -66,7 +66,7 @@ namespace SupremePlayServer
             }
             catch
             {
-                MessageBox.Show(e.ToString());
+                write_log(e.ToString());
             }
         }
 
@@ -77,11 +77,11 @@ namespace SupremePlayServer
                 count_down--;
                 textBox2.Text = count_down.ToString();
                 Packet("<chat>" + count_down + "초 후 리붓합니다. 안전한 곳으로 이동하시길 바랍니다.</chat>");
-                listBox2.Items.Add("(" + DateTime.Now.ToString() + ") 리붓 " + count_down + "초 전");
+                write_log("리붓 " + count_down + "초 전");
                 if (count_down <= 0) // 전체 강퇴
                 {
                     Packet("<ki>모두,비바람이 휘몰아치고 있습니다. 잠시만 기다려 주세요.,</ki>");
-                    listBox2.Items.Add("(" + DateTime.Now.ToString() + ") 리붓");
+                    write_log("리붓 완료");
                     textBox2.Text = "";
                     timer.Enabled = false;
                     timer.Stop();
@@ -175,14 +175,14 @@ namespace SupremePlayServer
             if (data.Contains("<chat1>"))
             {
                 string[] word = splitTag("chat1", data).Split(',');
-                listBox2.Items.Add("[" + DateTime.Now.ToString() + "] " + word[0]);
+                write_log(word[0]);
                 int visibleItems = listBox2.ClientSize.Height / listBox2.ItemHeight;
                 listBox2.TopIndex = Math.Max(listBox2.Items.Count - visibleItems + 1, 0);   
             }
             if (data.Contains("<chat>"))
             {
                 string[] word = splitTag("chat", data).Split(',');
-                listBox2.Items.Add("[" + DateTime.Now.ToString() + "] " + word[0]);
+                write_log(word[0]);
                 int visibleItems = listBox2.ClientSize.Height / listBox2.ItemHeight;
                 listBox2.TopIndex = Math.Max(listBox2.Items.Count - visibleItems + 1, 0);
             }
@@ -265,8 +265,7 @@ namespace SupremePlayServer
                         userthread.thread.Abort();
                         if (userthread.UserName != null)
                         {
-                            //MessageBox.Show(userthread.UserName + "'님께서 종료하셨습니다.");
-                            listBox2.Items.Add("(" + DateTime.Now.ToString() + ") " + userthread.UserName + " 종료");
+                            write_log(userthread.UserName + " 종료");
                             Packet("<chat1>(알림): '" + userthread.UserName + "'님께서 종료하셨습니다.</chat1>");
                             Packet("<9>" + userthread.UserCode + "</9>");
                         }
@@ -305,27 +304,8 @@ namespace SupremePlayServer
 
         private void FormClose(object sender, FormClosedEventArgs e)
         {
-            string dir = "./Log/";
-            // 지금까지의 로그를 저장하기
-            try
-            {
-                if (!Directory.Exists(@dir)) 
-                    Directory.CreateDirectory(@dir);
-            }
-            catch
-            {
-
-            }
-            listBox2.Items.Add("<" + DateTime.Now.ToString() + " 서버 종료>");
-            listBox2.Items.Add("");
-            string t = DateTime.Now.ToShortDateString();
-            using (StreamWriter logfile = new StreamWriter(@dir + "(" + t + ")Log.txt", true))
-            {
-                foreach (string i in listBox2.Items)
-                {
-                    logfile.WriteLine(i.ToString());
-                }
-            }
+            write_log("서버 종료");
+            write_log("------------------------------");
             Application.ExitThread();
             Environment.Exit(0);
             System.Diagnostics.Process.GetCurrentProcess().Kill();
@@ -393,7 +373,7 @@ namespace SupremePlayServer
                 {
                     string name = UserList[listBox1.SelectedIndex].UserName;
                     Packet("<prison>" + name + "</prison>");
-                    listBox2.Items.Add("(" + DateTime.Now.ToString() + ") " + name + " 감옥");
+                    write_log(name + " 감옥");
                     textBox1.Text = "";
                 }
             }
@@ -403,7 +383,7 @@ namespace SupremePlayServer
                 {
                     string name = UserList[listBox1.SelectedIndex].UserName;
                     Packet("<emancipation>" + name + "</emancipation>");
-                    listBox2.Items.Add("(" + DateTime.Now.ToString() + ") " + name + " 석방");
+                    write_log(name + " 석방");
                     textBox1.Text = "";
                 }
             }
@@ -417,14 +397,14 @@ namespace SupremePlayServer
                     else
                         Packet("<ki>" + name + "," + textBox1.Text + ",</ki>");
                     Packet("<chat>" + name + "님이 강퇴 당하셨습니다." + "</chat>");
-                    listBox2.Items.Add("(" + DateTime.Now.ToString() + ") " + name + " 강퇴");
+                    write_log(name + " 강퇴");
                     textBox1.Text = "";
                 }
             }
             else if (radioButton_5.Checked) // 모두 강퇴
             {
                 Packet("<ki>모두," + textBox1.Text + ",</ki>");
-                listBox2.Items.Add("(" + DateTime.Now.ToString() + ") 모두 강퇴 : " + textBox1.Text);
+                write_log("모두 강퇴 : " + textBox1.Text);
                 textBox1.Text = "";
             }
             // 자동 스크롤
@@ -457,7 +437,7 @@ namespace SupremePlayServer
                 if(int.TryParse(exp_event_num.Text, out n))
                 {
                     Packet("<exp_event> " + exp_event_num.Text + " </exp_event>");
-                    listBox2.Items.Add("[" + DateTime.Now.ToString() + "] 경험치 " + n +"배 이벤트 시작");
+                    write_log("경험치 " + n + "배 이벤트 시작");
                     exe_event = n;
                 }
             }
@@ -467,7 +447,7 @@ namespace SupremePlayServer
         {
             if (radioButton1.Checked == true && UserList != null)
             {
-                listBox2.Items.Add("[" + DateTime.Now.ToString() + "] 경험치 이벤트 종료");
+                write_log("경험치 이벤트 종료");
                 Packet("<exp_event> 0 </exp_event>");
             }
         }
@@ -476,7 +456,7 @@ namespace SupremePlayServer
         {
             if (radioButton2.Checked == true && UserList != null)
             {
-                listBox2.Items.Add("[" + DateTime.Now.ToString() + "] 경험치 2배 이벤트 시작");
+                write_log("경험치 2배 이벤트 시작");
                 Packet("<exp_event> 2 </exp_event>");
             }
         }
@@ -485,7 +465,7 @@ namespace SupremePlayServer
         {
             if (radioButton3.Checked == true && UserList != null)
             {
-                listBox2.Items.Add("[" + DateTime.Now.ToString() + "] 경험치 3배 이벤트 시작");
+                write_log("경험치 3배 이벤트 시작");
                 Packet("<exp_event> 3 </exp_event>");
             }
         }
@@ -494,7 +474,7 @@ namespace SupremePlayServer
         {
             if (radioButton4.Checked == true && UserList != null)
             {
-                listBox2.Items.Add("[" + DateTime.Now.ToString() + "] 경험치 5배 이벤트 시작");
+                write_log("경험치 5배 이벤트 시작");
                 Packet("<exp_event> 5 </exp_event>");
             }
         }
@@ -513,6 +493,7 @@ namespace SupremePlayServer
         {
 
         }
+
 
         private void ListBox1_MouseDown(object sender, MouseEventArgs e)
         {
@@ -541,14 +522,14 @@ namespace SupremePlayServer
                 {
                     string name = UserList[listBox1.SelectedIndex].UserName;
                     Packet("<prison>" + name + "</prison>");
-                    listBox2.Items.Add("(" + DateTime.Now.ToString() + ") " + name + " 감옥");
+                    write_log(name + " 감옥");
                     textBox1.Text = "";
                 }
                 if (str == "석방")
                 {
                     string name = UserList[listBox1.SelectedIndex].UserName;
                     Packet("<emancipation>" + name + "</emancipation>");
-                    listBox2.Items.Add("(" + DateTime.Now.ToString() + ") " + name + " 석방");
+                    write_log(name + " 석방");
                     textBox1.Text = "";
                 }
                 if (str == "강퇴")
@@ -559,7 +540,7 @@ namespace SupremePlayServer
                     else
                         Packet("<ki>" + name + "," + textBox1.Text + ",</ki>");
                     Packet("<chat>" + name + "님이 강퇴 당하셨습니다." + "</chat>");
-                    listBox2.Items.Add("(" + DateTime.Now.ToString() + ") " + name + " 강퇴");
+                    write_log(name + " 강퇴");
                     textBox1.Text = "";
                 }
             }
@@ -567,14 +548,48 @@ namespace SupremePlayServer
 
         private void button2_Click(object sender, EventArgs e)
         {
-            if(int.Parse(textBox2.Text) > 0)
+            int n = -1;
+            if (int.TryParse(textBox2.Text, out n))
             {
                 timer = new System.Windows.Forms.Timer();
                 timer.Interval = 1000; // 몹 리젠 시간
-                count_down = int.Parse(textBox2.Text);
+                count_down = n;
                 timer.Enabled = true;
                 timer.Tick += timer_tick2;
                 timer.Start();
+            }
+            else
+            {
+                write_log("(입력 오류)숫자를 입력하세요");
+            }
+        }
+
+        public void write_log(string s)
+        {
+            string t = DateTime.Now.ToString();
+            if (s != null && s.Length > 0)
+            {
+                listBox2.Items.Add("[" + t + "]" + s);
+            }
+
+            string dir = "./Log/";
+            // 지금까지의 로그를 저장하기
+            try
+            {
+                if (!Directory.Exists(@dir))
+                    Directory.CreateDirectory(@dir);
+                t = DateTime.Now.ToShortDateString();
+                using (StreamWriter logfile = new StreamWriter(@dir + "(" + t + ")Log.txt", true))
+                {
+                    foreach (string i in listBox2.Items)
+                    {
+                        logfile.WriteLine(i.ToString());
+                    }
+                }
+            }
+            catch
+            {
+
             }
         }
     }

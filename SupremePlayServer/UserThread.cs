@@ -33,7 +33,7 @@ namespace SupremePlayServer
         public int last_map_id = 0;
         public String map_name = "";
 
-        string[] map_message = 
+        string[] map_message =
         {
             "<mon_move",
             "<aggro",
@@ -70,13 +70,13 @@ namespace SupremePlayServer
             NS = client.GetStream(); // 소켓에서 메시지를 가져오는 스트림
             SR = new StreamReader(NS, Encoding.UTF8); // Get message
             SW = new StreamWriter(NS, Encoding.UTF8); // Send message
-            
+
             string GetMessage = string.Empty;
-            try
+            while (true)
             {
-                while (true)
+                while (client.Connected) //클라이언트 메시지받기
                 {
-                    while (client.Connected) //클라이언트 메시지받기
+                    try
                     {
                         GetMessage = SR.ReadLine();
                         if (GetMessage == null) continue;
@@ -125,7 +125,7 @@ namespace SupremePlayServer
                             // 로긴 성공
                             else if (resultcode == 2)
                             {
-                                if(mainform.UserList.Count > mainform.max_user_name)
+                                if (mainform.UserList.Count > mainform.max_user_name)
                                 {
                                     SW.WriteLine("<user_limit>서버 유저 수 제한입니다. 다음에 시도해주세요.</user_limit>"); // 메시지 보내기
                                     SW.Flush();
@@ -234,7 +234,7 @@ namespace SupremePlayServer
                             //MessageBox.Show("몬스터 정보 요청");
                             if (!sd.monster_data.ContainsKey(last_map_id)) continue;
                             List<Monster> da = sd.monster_data[last_map_id];
-                            foreach(var d in da)
+                            foreach (var d in da)
                             {
                                 string s = d.map_id + "," + d.id + "," + d.hp + "," + d.x + "," + d.y + "," + d.direction + "," + d.respawn;
                                 SW.WriteLine("<req_monster>" + s + "</req_monster>");
@@ -278,12 +278,12 @@ namespace SupremePlayServer
                             String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
 
                             int map_id = int.Parse(data2[0]);
-                            if(!mainform.MapUser2.ContainsKey(map_id)) // 해당 맵에 아무도 없었다면?
+                            if (!mainform.MapUser2.ContainsKey(map_id)) // 해당 맵에 아무도 없었다면?
                             {
                                 mainform.MapUser2.Add(map_id, new List<UserThread>());
                                 SW.WriteLine("<map_player>1</map_player>");
                             }
-                            else if(mainform.MapUser2[map_id].Count == 0)
+                            else if (mainform.MapUser2[map_id].Count == 0)
                             {
                                 SW.WriteLine("<map_player>1</map_player>");
                             }
@@ -330,7 +330,7 @@ namespace SupremePlayServer
 
                             if (plist.IndexOf(d1[0] + ">") != -1)
                             {
-                                
+
                                 if (map_message.Contains(d1[0]))
                                 {
                                     mainform.Invoke((MethodInvoker)(() => mainform.Map_Packet(GetMessage, last_map_id, UserCode)));
@@ -340,18 +340,20 @@ namespace SupremePlayServer
                             }
                         }
                     }
+                    catch (Exception e)
+                    {
+                        mainform.write_log(e.ToString());
+                        //MessageBox.Show(e.ToString());
+                        if(!client.Connected)
+                        {
+                            SW.Close();
+                            SR.Close();
+                            client.Close();
+                            NS.Close();
+                            return;
+                        }
+                    }
                 }
-            }
-            catch (Exception e)
-            {
-                //MessageBox.Show(e.ToString());
-            }
-            finally
-            {
-                SW.Close();
-                SR.Close();
-                client.Close();
-                NS.Close();
             }
         }
 
