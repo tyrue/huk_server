@@ -15,7 +15,7 @@ namespace SupremePlayServer
         public systemdata sd;
         public List<UserThread> UserList;
         public Dictionary<int, List<UserThread>> MapUser2;
-        System_DB system_db = new System_DB();
+        public System_DB system_db;
         public int count_down = 0; // 리붓 카운트 다운
         System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
         public int exe_event = 0;
@@ -23,6 +23,7 @@ namespace SupremePlayServer
         
         public MainForm()
         {
+            system_db = new System_DB();
             sd = new systemdata();
             InitializeComponent();
             radioButton1.Select(); // 경험치 이벤트 없음
@@ -232,7 +233,7 @@ namespace SupremePlayServer
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.ToString());
+                write_log(e.ToString());
             }
         }
 
@@ -566,24 +567,45 @@ namespace SupremePlayServer
 
         public void write_log(string s)
         {
-            string t = DateTime.Now.ToString();
-            if (s != null && s.Length > 0)
-            {
-                listBox2.Items.Add("[" + t + "]" + s);
-            }
-
-            string dir = "./Log/";
             // 지금까지의 로그를 저장하기
             try
             {
+                string t = DateTime.Now.ToShortDateString();
+                string dir = "./LogServer/";
                 if (!Directory.Exists(@dir))
                     Directory.CreateDirectory(@dir);
-                t = DateTime.Now.ToShortDateString();
                 using (StreamWriter logfile = new StreamWriter(@dir + "(" + t + ")Log.txt", true))
                 {
-                    foreach (string i in listBox2.Items)
+                    t = DateTime.Now.ToString();
+                    if (s != null && s.Length > 0)
                     {
-                        logfile.WriteLine(i.ToString());
+                        listBox2.Items.Add("[" + t + "]" + s);
+                        logfile.WriteLine("[" + t + "]" + s);
+                    }
+                }
+            }
+            catch
+            {
+
+            }
+        }
+
+        // 유저별 데이터 로그 저장
+        public void write_log_user(string name, string data)
+        {
+            // 지금까지의 로그를 저장하기
+            try
+            {
+                string t = DateTime.Now.ToShortDateString();
+                string dir = "./LogUser/" + name + "/";
+                if (!Directory.Exists(@dir))
+                    Directory.CreateDirectory(@dir);
+                using (StreamWriter logfile = new StreamWriter(@dir + "(" + t + ")" + name + "Log.txt", true))
+                {
+                    t = DateTime.Now.ToString();
+                    if (data != null && data.Length > 0)
+                    {
+                        logfile.WriteLine("[" + t + "]" + data);
                     }
                 }
             }

@@ -32,6 +32,18 @@ namespace SupremePlayServer
 
         public int last_map_id = 0;
         public String map_name = "";
+        System_DB system_db;
+
+        string[] ignore_ms =
+        {
+            "<mon_move",
+            "<aggro",
+            "<mon_damage",
+            "<player_damage",
+            "<enemy_dead",
+            "<monster",
+
+        };
 
         string[] map_message =
         {
@@ -49,6 +61,7 @@ namespace SupremePlayServer
         public void startClient(TcpClient clientSocket)
         {
             sd = mainform.sd;
+            system_db = mainform.system_db;
             // Get Packet List
             plist = sd.getAllpacketList();
 
@@ -87,6 +100,15 @@ namespace SupremePlayServer
                          * */
                         //MessageBox.Show(GetMessage);
                         // Authorization 인증
+                        if (UserName != "" || UserName != null || UserName.Length != 0)
+                        {
+                            string[] co1 = { ">" };
+                            String[] d1 = GetMessage.Split(co1, StringSplitOptions.RemoveEmptyEntries);
+                            if (!ignore_ms.Contains(d1[0]))
+                                mainform.write_log_user(UserName, GetMessage);
+                        }
+                            
+
                         if (GetMessage.Contains("<0>"))
                         {
                             SW.WriteLine("<0 " + UserCode + ">'e' n=Suprememay Server</0>"); // 메시지 보내기
@@ -96,14 +118,13 @@ namespace SupremePlayServer
                         // Registration
                         else if (GetMessage.Contains("<regist>"))
                         {
-                            System_DB system_db = new System_DB();
+                            
                             system_db.Registeration(NS, GetMessage);
                         }
 
                         // Login
                         else if (GetMessage.Contains("<login"))
                         {
-                            System_DB system_db = new System_DB();
                             String Ldata = system_db.Login(GetMessage); // 로그인 결과 받아옴
 
                             String[] words = Ldata.Split(',');
@@ -161,7 +182,6 @@ namespace SupremePlayServer
                         // 유저 데이터 저장
                         else if (GetMessage.Contains("<userdata>"))
                         {
-                            System_DB system_db = new System_DB();
                             system_db.SaveData(GetMessage, UserId);
 
                             try
@@ -218,7 +238,6 @@ namespace SupremePlayServer
                         // 유저 데이터 로드
                         else if (GetMessage.Contains("<dtloadreq>"))
                         {
-                            System_DB system_db = new System_DB();
                             system_db.SendData(NS, UserId);
                         }
 
@@ -270,10 +289,9 @@ namespace SupremePlayServer
                         // 현재 맵 이름 저장
                         else if (GetMessage.Contains("<map_name>"))
                         {
-                            System_DB system = new System_DB();
-                            system.SaveMap(GetMessage);
+                            system_db.SaveMap(GetMessage);
 
-                            string data = system.splitTag("map_name", GetMessage);
+                            string data = system_db.splitTag("map_name", GetMessage);
                             string[] co1 = { "," };
                             String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
 
@@ -306,8 +324,7 @@ namespace SupremePlayServer
                         else if (GetMessage.Contains("<9>"))
                         {
                             mainform.removeMapUser(last_map_id, this);
-                            System_DB system = new System_DB();
-                            if (!UserCode.Equals("*null*") && system.splitTag("9", GetMessage).Equals(UserCode))
+                            if (!UserCode.Equals("*null*") && system_db.splitTag("9", GetMessage).Equals(UserCode))
                             {
                                 if (UserName != null)
                                 {
@@ -317,6 +334,14 @@ namespace SupremePlayServer
                                     client.Close();
                                     NS.Close();
                                     mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage)));
+                                }
+                                else
+                                {
+                                    SW.Close();
+                                    SR.Close();
+                                    client.Close();
+                                    NS.Close();
+                                    return;
                                 }
                                 UserCode = "*null*";
                             }
@@ -342,7 +367,7 @@ namespace SupremePlayServer
                     }
                     catch (Exception e)
                     {
-                        mainform.write_log(e.ToString());
+                        //mainform.write_log(e.ToString());
                         //MessageBox.Show(e.ToString());
                         if(!client.Connected)
                         {

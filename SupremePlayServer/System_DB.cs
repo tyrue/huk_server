@@ -11,7 +11,7 @@ using System.Windows.Forms;
 
 namespace SupremePlayServer
 {
-    class System_DB : UserThread
+    public class System_DB : UserThread
     {
         private string DBInfo = "Server=127.0.0.1;Database=supremeplay;Uid=root;Pwd=abs753951;CharSet=utf8";
 
