@@ -56,6 +56,8 @@
             this.label4 = new System.Windows.Forms.Label();
             this.panel2 = new System.Windows.Forms.Panel();
             this.button2 = new System.Windows.Forms.Button();
+            this.exp_event_num = new System.Windows.Forms.TextBox();
+            this.label5 = new System.Windows.Forms.Label();
             this.statusStrip1.SuspendLayout();
             this.flowLayoutPanel1.SuspendLayout();
             this.flowLayoutPanel2.SuspendLayout();
@@ -71,7 +73,7 @@
             this.toolStripStatusLabel2});
             this.statusStrip1.Location = new System.Drawing.Point(0, 346);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(841, 22);
+            this.statusStrip1.Size = new System.Drawing.Size(867, 22);
             this.statusStrip1.TabIndex = 3;
             this.statusStrip1.Text = "접속자 :";
             // 
@@ -88,14 +90,13 @@
             // 
             // listBox1
             // 
-            this.listBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
+            this.listBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
             this.listBox1.FormattingEnabled = true;
             this.listBox1.ItemHeight = 15;
             this.listBox1.Location = new System.Drawing.Point(3, 3);
             this.listBox1.Name = "listBox1";
-            this.listBox1.Size = new System.Drawing.Size(111, 259);
+            this.listBox1.Size = new System.Drawing.Size(157, 274);
             this.listBox1.TabIndex = 4;
             this.listBox1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.ListBox1_MouseDown);
             // 
@@ -114,10 +115,9 @@
             // 
             // label2
             // 
-            this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label2.AutoSize = true;
             this.label2.Font = new System.Drawing.Font("맑은 고딕", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(129)));
-            this.label2.Location = new System.Drawing.Point(149, 19);
+            this.label2.Location = new System.Drawing.Point(175, 19);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(31, 15);
             this.label2.TabIndex = 7;
@@ -127,7 +127,7 @@
             // 
             this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(238, 9);
+            this.label3.Location = new System.Drawing.Point(264, 9);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(70, 15);
             this.label3.TabIndex = 15;
@@ -135,16 +135,17 @@
             // 
             // listBox2
             // 
-            this.listBox2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            this.listBox2.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.listBox2.Font = new System.Drawing.Font("맑은 고딕", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(129)));
             this.listBox2.FormattingEnabled = true;
             this.listBox2.HorizontalScrollbar = true;
             this.listBox2.ItemHeight = 17;
-            this.listBox2.Location = new System.Drawing.Point(120, 4);
+            this.listBox2.Location = new System.Drawing.Point(166, 4);
             this.listBox2.Name = "listBox2";
             this.listBox2.SelectionMode = System.Windows.Forms.SelectionMode.None;
-            this.listBox2.Size = new System.Drawing.Size(549, 242);
+            this.listBox2.Size = new System.Drawing.Size(529, 242);
             this.listBox2.TabIndex = 5;
             this.listBox2.SelectedIndexChanged += new System.EventHandler(this.ListBox2_SelectedIndexChanged);
             // 
@@ -326,9 +327,9 @@
             this.flowLayoutPanel3.Controls.Add(this.flowLayoutPanel2);
             this.flowLayoutPanel3.Controls.Add(this.button1);
             this.flowLayoutPanel3.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
-            this.flowLayoutPanel3.Location = new System.Drawing.Point(687, 37);
+            this.flowLayoutPanel3.Location = new System.Drawing.Point(713, 66);
             this.flowLayoutPanel3.Name = "flowLayoutPanel3";
-            this.flowLayoutPanel3.Size = new System.Drawing.Size(154, 290);
+            this.flowLayoutPanel3.Size = new System.Drawing.Size(142, 265);
             this.flowLayoutPanel3.TabIndex = 27;
             // 
             // panel1
@@ -341,15 +342,16 @@
             this.panel1.Controls.Add(this.textBox1);
             this.panel1.Location = new System.Drawing.Point(12, 37);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(672, 294);
+            this.panel1.Size = new System.Drawing.Size(698, 294);
             this.panel1.TabIndex = 28;
             // 
             // textBox1
             // 
-            this.textBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.textBox1.Location = new System.Drawing.Point(120, 268);
+            this.textBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.textBox1.Location = new System.Drawing.Point(166, 254);
             this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(546, 23);
+            this.textBox1.Size = new System.Drawing.Size(529, 23);
             this.textBox1.TabIndex = 29;
             this.textBox1.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.message_keyDown);
             // 
@@ -376,9 +378,9 @@
             this.panel2.Controls.Add(this.button2);
             this.panel2.Controls.Add(this.textBox2);
             this.panel2.Controls.Add(this.label4);
-            this.panel2.Location = new System.Drawing.Point(595, 6);
+            this.panel2.Location = new System.Drawing.Point(621, 6);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(246, 31);
+            this.panel2.Size = new System.Drawing.Size(246, 28);
             this.panel2.TabIndex = 31;
             // 
             // button2
@@ -392,11 +394,32 @@
             this.button2.UseVisualStyleBackColor = true;
             this.button2.Click += new System.EventHandler(this.button2_Click);
             // 
+            // exp_event_num
+            // 
+            this.exp_event_num.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.exp_event_num.Location = new System.Drawing.Point(805, 43);
+            this.exp_event_num.Name = "exp_event_num";
+            this.exp_event_num.Size = new System.Drawing.Size(49, 23);
+            this.exp_event_num.TabIndex = 32;
+            this.exp_event_num.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.exe_event_send);
+            // 
+            // label5
+            // 
+            this.label5.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(715, 48);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(83, 15);
+            this.label5.TabIndex = 33;
+            this.label5.Text = "경험치 이벤트";
+            // 
             // MainForm
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Inherit;
             this.AutoScroll = true;
-            this.ClientSize = new System.Drawing.Size(841, 368);
+            this.ClientSize = new System.Drawing.Size(867, 368);
+            this.Controls.Add(this.label5);
+            this.Controls.Add(this.exp_event_num);
             this.Controls.Add(this.panel2);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.flowLayoutPanel3);
@@ -458,6 +481,8 @@
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Panel panel2;
         private System.Windows.Forms.Button button2;
+        private System.Windows.Forms.TextBox exp_event_num;
+        private System.Windows.Forms.Label label5;
     }
 }
 
