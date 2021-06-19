@@ -33,6 +33,10 @@ namespace SupremePlayServer
         public int last_map_id = 0;
         public String map_name = "";
         System_DB system_db;
+        bool is_v = false;
+
+        // 타이머 생성 및 시작
+        System.Timers.Timer timer2; 
 
         string[] ignore_ms =
         {
@@ -42,7 +46,11 @@ namespace SupremePlayServer
             "<player_damage",
             "<enemy_dead",
             "<monster",
-
+            "<hp",
+            "<drop_del",
+            "<del_item",
+            "<drop_create",
+            "<userdata",
         };
 
         string[] map_message =
@@ -56,7 +64,8 @@ namespace SupremePlayServer
             "<partyhill",
             "<npt_move",
             "<map_chat",
-            "<27"
+            "<27",
+            "<show_range_skill"
         };
         public void startClient(TcpClient clientSocket)
         {
@@ -75,6 +84,38 @@ namespace SupremePlayServer
             thread = new Thread(NetListener);
             thread.IsBackground = true;
             thread.Start();
+
+            timer2 = new System.Timers.Timer();
+            timer2.Interval = 1000;
+            timer2.Elapsed += new System.Timers.ElapsedEventHandler(timer_tick);
+
+        }
+
+        void timer_tick(object sender, EventArgs e)
+        {
+            try
+            {
+                mainform.write_log("카운트다운 끝");
+                if (!is_v)
+                {
+                    mainform.write_log("version_false");
+                    SW.WriteLine("<over>버전이 다릅니다.</over>");
+                    SW.Close();
+                    SR.Close();
+                    client.Close();
+                    NS.Close();
+                }
+                else
+                {
+                    mainform.write_log("version_true");
+                    SW.WriteLine("<sever_msg>흑부엉의 바람의나라에 오신것을 환영합니다.</sever_msg>");
+                }
+            }
+            catch
+            {
+                mainform.write_log(e.ToString());
+            }
+            timer2.Stop();
         }
 
         // Thread - Net Listener
@@ -107,7 +148,7 @@ namespace SupremePlayServer
                             if (!ignore_ms.Contains(d1[0]))
                                 mainform.write_log_user(UserName, GetMessage);
                         }
-                            
+
 
                         if (GetMessage.Contains("<0>"))
                         {
@@ -118,7 +159,7 @@ namespace SupremePlayServer
                         // Registration
                         else if (GetMessage.Contains("<regist>"))
                         {
-                            
+
                             system_db.Registeration(NS, GetMessage);
                         }
 
@@ -148,7 +189,7 @@ namespace SupremePlayServer
                             {
                                 if (mainform.UserList.Count > mainform.max_user_name)
                                 {
-                                    SW.WriteLine("<user_limit>서버 유저 수 제한입니다. 다음에 시도해주세요.</user_limit>"); // 메시지 보내기
+                                    SW.WriteLine("<sever_msg>서버 유저 수 제한입니다. 다음에 시도해주세요.</sever_msg>"); // 메시지 보내기
                                     SW.Flush();
                                     continue;
                                 }
@@ -178,6 +219,40 @@ namespace SupremePlayServer
                             SW.WriteLine("<check>standard</check>");
                             SW.Flush();
                         }
+
+                        else if (GetMessage.Contains("<versione>"))
+                        {
+                            string ver = splitTag("versione", GetMessage);
+                            if (ver != mainform.version)
+                            {
+                                SW.WriteLine("<over>버전이 다릅니다.</over>");
+                                SW.WriteLine("<versione>" + mainform.version + "</versione>");
+                                SW.Close();
+                                SR.Close();
+                                client.Close();
+                                NS.Close();
+                                return;
+                            }
+                            else
+                            {
+                                mainform.write_log("카운트다운 시작");
+                                SW.WriteLine("<versione>" + mainform.version + "</versione>");
+                                timer2.Start();
+                                // 여기서부터 5초안에 타이머 켜서 만약 원하는 답을 주지 않을 경우 퇴출 시켜버림
+                                SW.WriteLine("<timer_v></timer_v>");
+                            }
+                            SW.Flush();
+                        }
+
+                        else if (GetMessage.Contains("<timer_v>"))
+                        {
+                            string ver = splitTag("timer_v", GetMessage);
+                            if (ver == "ok")
+                            {
+                                is_v = true;
+                            }
+                        }
+
 
                         // 유저 데이터 저장
                         else if (GetMessage.Contains("<userdata>"))
@@ -347,6 +422,27 @@ namespace SupremePlayServer
                             }
                         }
 
+                        else if (GetMessage.Contains("<party_switch>"))
+                        {
+                            // 스위치 id, 스위치 상태, 맵 id
+                            string data = splitTag("party_switch", GetMessage);
+                            string[] co1 = { "," };
+                            String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
+                            mainform.switch_send(data2[0], data2[1], int.Parse(data2[2]));
+                        }
+
+                        else if (GetMessage.Contains("<monster_cooltime_reset>"))
+                        {
+                            // 스위치 id, 스위치 상태, 맵 id
+                            string data = splitTag("monster_cooltime_reset", GetMessage);
+                            string[] co1 = { "," };
+                            String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
+                            if(data2.Length >= 2)
+                                mainform.monster_cooltime_reset(int.Parse(data2[0]), int.Parse(data2[1]));
+                            else
+                                mainform.monster_cooltime_reset(int.Parse(data2[0]));
+                        }
+
                         // 나머지는 다 방송함
                         else if (!GetMessage.Equals("null"))
                         {
@@ -355,7 +451,6 @@ namespace SupremePlayServer
 
                             if (plist.IndexOf(d1[0] + ">") != -1)
                             {
-
                                 if (map_message.Contains(d1[0]))
                                 {
                                     mainform.Invoke((MethodInvoker)(() => mainform.Map_Packet(GetMessage, last_map_id, UserCode)));
@@ -369,7 +464,7 @@ namespace SupremePlayServer
                     {
                         //mainform.write_log(e.ToString());
                         //MessageBox.Show(e.ToString());
-                        if(!client.Connected)
+                        if (!client.Connected)
                         {
                             SW.Close();
                             SR.Close();
@@ -392,5 +487,7 @@ namespace SupremePlayServer
 
             return d2[0];
         }
+
+        
     }
 }

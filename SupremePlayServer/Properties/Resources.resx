@@ -124,4 +124,7 @@
   <data name="PORT" xml:space="preserve">
     <value>52000</value>
   </data>
+  <data name="VERSION" xml:space="preserve">
+    <value>qwe</value>
+  </data>
 </root>

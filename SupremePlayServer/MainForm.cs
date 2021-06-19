@@ -20,7 +20,8 @@ namespace SupremePlayServer
         System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
         public int exe_event = 0;
         public int max_user_name = 10; // 전체 인원 제한
-        
+        public string version = Properties.Resources.VERSION;
+
         public MainForm()
         {
             system_db = new System_DB();
@@ -39,6 +40,29 @@ namespace SupremePlayServer
             write_log("------------------------------");
             write_log("서버 시작");
             write_log("몬스터 데이터 삭제");
+
+            try
+            {
+                string dir = "./";
+                FileInfo fileInfo = new FileInfo(dir + "version.txt");
+                if(!fileInfo.Exists)
+                {
+                    using (StreamWriter verFile = new StreamWriter(@dir + "version.txt", true))
+                    {
+                        verFile.WriteLine(version);
+                    }
+                }
+                using (StreamReader verFile = new StreamReader(@dir + "version.txt", true))
+                {
+                    version = verFile.ReadLine();
+                    Console.WriteLine(version);
+                }
+                write_log("현재 버전 : " + version);
+            }
+            catch (Exception e)
+            {
+                write_log(e.ToString());
+            }
         }
 
         void timer_tick(object sender, EventArgs e)
@@ -587,6 +611,29 @@ namespace SupremePlayServer
             catch
             {
 
+            }
+        }
+
+        // 맵의 유저들에게 스위치 공유
+        public void switch_send(string sw_num, string state, int map_id = 0)
+        {
+            if (map_id > 0)
+                Map_Packet("<switches>" + sw_num + "," + state + "</switches>", map_id);
+            else
+                Packet("<switches>" + sw_num + "," + state + "</switches>");
+        }
+
+        public void monster_cooltime_reset(int map_id, int mon_id = 0)
+        {
+            foreach(var v in sd.monster_data[map_id])
+            {
+                if(mon_id != 0)
+                {
+                    if (v.id == mon_id && v.respawn > 0)
+                        v.respawn = 10;
+                }
+                else if (v.respawn > 0) 
+                    v.respawn = 120;
             }
         }
 
