@@ -71,7 +71,7 @@ namespace SupremePlayServer.Properties {
         }
         
         /// <summary>
-        ///   52000과(와) 유사한 지역화된 문자열을 찾습니다.
+        ///   52001과(와) 유사한 지역화된 문자열을 찾습니다.
         /// </summary>
         internal static string PORT {
             get {

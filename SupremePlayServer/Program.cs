@@ -25,6 +25,7 @@ namespace SupremePlayServer
         {
             Application.ExitThread();
             Environment.Exit(0);
+            MessageBox.Show(e.ToString());
             System.Diagnostics.Process.GetCurrentProcess().Kill();
         }
     }

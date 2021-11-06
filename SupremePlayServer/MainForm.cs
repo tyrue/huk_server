@@ -30,6 +30,8 @@ namespace SupremePlayServer
             radioButton1.Select(); // 경험치 이벤트 없음
             radioButton_1.Select(); // 처음에 공지로 미리 선택됨
 
+            
+
             // 타이머 생성 및 시작
             System.Windows.Forms.Timer timer2 = new System.Windows.Forms.Timer();
             timer2.Interval = 1000; // 몹 리젠 시간
@@ -41,6 +43,7 @@ namespace SupremePlayServer
             write_log("서버 시작");
             write_log("몬스터 데이터 삭제");
 
+            
             try
             {
                 string dir = "./";

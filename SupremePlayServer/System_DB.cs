@@ -13,8 +13,15 @@ namespace SupremePlayServer
 {
     public class System_DB : UserThread
     {
-        private string DBInfo = "Server=127.0.0.1;Database=supremeplay;Uid=root;Pwd=abs753951;CharSet=utf8";
-
+        private string DBInfo =
+            //"Server=gamedata.cadmqqrnily5.ap-northeast-2.rds.amazonaws.com;" + // aws 외부 접속 db 주소
+            "Server=127.0.0.1;" +
+            "Database=supremeplay;" +
+            "Uid=root;" +
+            "Pwd=abs753951;" +
+            "CharSet=utf8";
+       
+        // 15.165.127.123
         #region 회원가입
 
         public void Registeration(NetworkStream NS, String data)
@@ -291,25 +298,33 @@ namespace SupremePlayServer
 
         public Dictionary<int, string> SendMap()
         {
-            Dictionary<int, string> data = new Dictionary<int, string>();
-            using (MySqlConnection conn = new MySqlConnection(DBInfo))
+            try
             {
-                // DB Connection
-                conn.Open();
-
-                string sql = "" +
-                    "SELECT* FROM map_name " +
-                    "ORDER BY id ASC";
-                MySqlCommand cmd = new MySqlCommand(sql, conn);
-                MySqlDataReader rdr = cmd.ExecuteReader();
-
-                while (rdr.Read())
+                Dictionary<int, string> data = new Dictionary<int, string>();
+                using (MySqlConnection conn = new MySqlConnection(DBInfo))
                 {
-                    data[int.Parse(rdr[0].ToString())] = rdr[1].ToString();
+                    // DB Connection
+                    conn.Open();
+
+                    string sql = "" +
+                        "SELECT* FROM map_name " +
+                        "ORDER BY id ASC";
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    MySqlDataReader rdr = cmd.ExecuteReader();
+
+                    while (rdr.Read())
+                    {
+                        data[int.Parse(rdr[0].ToString())] = rdr[1].ToString();
+                    }
+                    conn.Close();
                 }
-                conn.Close();
+                return data;
             }
-            return data;
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
+                return null;
+            }   
         }
 
         #region 맵 id에 대한 이름 저장

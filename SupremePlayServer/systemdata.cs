@@ -12,17 +12,25 @@ namespace SupremePlayServer
     public class systemdata
     {
         public Dictionary<int, List<Monster>> monster_data; // 맵에 존재하는 몬스터의 데이터를 저장
-        public Dictionary<int, List<Item>> item_data; // 맵에 존재하는 아이템의 데이터를 저장
+        public Dictionary<int, List<Item2>> item_data2; // 맵에 존재하는 아이템의 데이터를 저장
         public Dictionary<int, string> map_data; // 맵의 이름 저장
         System_DB system_db;
         
         public systemdata()
         {
-            monster_data = new Dictionary<int, List<Monster>>();
-            item_data = new Dictionary<int, List<Item>>();
-            map_data = new Dictionary<int, string>();
-            system_db = new System_DB();
-            map_data = system_db.SendMap();
+            try
+            {
+                monster_data = new Dictionary<int, List<Monster>>();
+                item_data2 = new Dictionary<int, List<Item2>>();
+
+                map_data = new Dictionary<int, string>();
+                system_db =  new System_DB();
+                map_data = system_db.SendMap();
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
+            }
         }
 
         public List<String> getAllpacketList()
@@ -35,7 +43,8 @@ namespace SupremePlayServer
             plist.Add("<23>");      // 몹 정보 공유
             plist.Add("<27>");      // 애니메이션 공유
             plist.Add("<partyhill>"); // 파티 힐
-            plist.Add("<Drop>");    // 버리기
+            plist.Add("<Drop>");    // 템 드랍
+            plist.Add("<Drop_Get>");    // 템 삭제
             plist.Add("<drop_create>"); // 템 드랍
             plist.Add("<drop_del>");    // 템 삭제
             plist.Add("<Guild_Message>"); // 길드 메시지
@@ -132,30 +141,38 @@ namespace SupremePlayServer
             }
         }
 
-
-        public void SaveItem(string data)
+        public void SaveItem2(string data)
         {
             string[] d = data.Split(',');
-            Item i = new Item();
-            i.map_id = int.Parse(d[0]);
-            i.id = int.Parse(d[1]);
-            i.x = int.Parse(d[2]);
-            i.y = int.Parse(d[3]);
+            Item2 i = new Item2();
 
-            if (!item_data.ContainsKey(int.Parse(d[0])))
-                item_data[int.Parse(d[0])] = new List<Item>();
-            item_data[int.Parse(d[0])].Add(i);
+            i.d_id = int.Parse(d[0]);
+            i.type2 = int.Parse(d[1]);
+            i.type1 = int.Parse(d[2]);
+            i.id = int.Parse(d[3]);
+            i.map_id = int.Parse(d[4]);
+            i.x = int.Parse(d[5]);
+            i.y = int.Parse(d[6]);
+            i.num = int.Parse(d[7]);
+
+            if (!item_data2.ContainsKey(i.map_id))
+                item_data2[i.map_id] = new List<Item2>();
+            item_data2[i.map_id].Add(i);
         }
 
-        public void DelItem(string data)
+
+        public void DelItem2(string data) // 맵id, id
         {
             string[] s = data.Split(',');
-            if (!item_data.ContainsKey(int.Parse(s[0]))) return;
-            var d = from i in item_data[int.Parse(s[0])]
-                    where (i.map_id == int.Parse(s[0]) && i.x == int.Parse(s[2]) && i.y == int.Parse(s[3]))
+            int map_id = int.Parse(s[1]);
+            int id = int.Parse(s[0]);
+
+            if (!item_data2.ContainsKey(map_id)) return;
+            var d = from i in item_data2[map_id]
+                    where i.d_id == id
                     select i;
             if(d != null && d.Count() > 0)
-                item_data[int.Parse(s[0])].Remove(d.First());
+                item_data2[map_id].Remove(d.First());
         }
 
         public string SendMap(int id)
@@ -193,8 +210,7 @@ namespace SupremePlayServer
 
         public void DelAllItem()
         {
-            item_data.Clear();
+            item_data2.Clear();
         }
-
     }
 }
