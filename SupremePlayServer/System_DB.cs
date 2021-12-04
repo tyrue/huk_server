@@ -14,8 +14,8 @@ namespace SupremePlayServer
     public class System_DB : UserThread
     {
         private string DBInfo =
-            //"Server=gamedata.cadmqqrnily5.ap-northeast-2.rds.amazonaws.com;" + // aws 외부 접속 db 주소
-            "Server=127.0.0.1;" +
+            "Server=gamedata.cadmqqrnily5.ap-northeast-2.rds.amazonaws.com;" + // aws 외부 접속 db 주소
+            //"Server=127.0.0.1;" +
             "Database=supremeplay;" +
             "Uid=root;" +
             "Pwd=abs753951;" +

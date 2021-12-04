@@ -19,6 +19,7 @@ namespace SupremePlayServer
         public int count_down = 0; // 리붓 카운트 다운
         System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
         public int exe_event = 0;
+        public double drop_event = 0;
         public int max_user_name = 10; // 전체 인원 제한
         public string version = Properties.Resources.VERSION;
 
@@ -27,10 +28,7 @@ namespace SupremePlayServer
             system_db = new System_DB();
             sd = new systemdata();
             InitializeComponent();
-            radioButton1.Select(); // 경험치 이벤트 없음
             radioButton_1.Select(); // 처음에 공지로 미리 선택됨
-
-            
 
             // 타이머 생성 및 시작
             System.Windows.Forms.Timer timer2 = new System.Windows.Forms.Timer();
@@ -363,27 +361,6 @@ namespace SupremePlayServer
             return d2[0];
         }
 
-        public int radioSelected()
-        {
-            if(radioButton1.Checked)
-            {
-                return 0; // 경험치 이벤 없음
-            }
-            else if (radioButton2.Checked)
-            {
-                return 2; // 경험치 2배
-            }
-            else if (radioButton3.Checked)
-            {
-                return 3; // 경험치 3배
-            }
-            else if (radioButton4.Checked)
-            {
-                return 5; // 경험치 5배
-            }
-            return 0;
-        }
-
         // 공지 보내기
         private void button1_Click(object sender, EventArgs e)
         {
@@ -464,46 +441,24 @@ namespace SupremePlayServer
                 int n = -1;
                 if(int.TryParse(exp_event_num.Text, out n))
                 {
-                    Packet("<exp_event> " + exp_event_num.Text + " </exp_event>");
+                    Packet("<exp_event> " + n + " </exp_event>");
                     write_log("경험치 " + n + "배 이벤트 시작");
                     exe_event = n;
                 }
             }
         }
 
-        private void RadioButton1_CheckedChanged(object sender, EventArgs e)
+        private void drop_event_send(object sender, KeyPressEventArgs e)
         {
-            if (radioButton1.Checked == true && UserList != null)
+            if (e.KeyChar == '\r')
             {
-                write_log("경험치 이벤트 종료");
-                Packet("<exp_event> 0 </exp_event>");
-            }
-        }
-
-        private void RadioButton2_CheckedChanged(object sender, EventArgs e)
-        {
-            if (radioButton2.Checked == true && UserList != null)
-            {
-                write_log("경험치 2배 이벤트 시작");
-                Packet("<exp_event> 2 </exp_event>");
-            }
-        }
-
-        private void RadioButton3_CheckedChanged(object sender, EventArgs e)
-        {
-            if (radioButton3.Checked == true && UserList != null)
-            {
-                write_log("경험치 3배 이벤트 시작");
-                Packet("<exp_event> 3 </exp_event>");
-            }
-        }
-
-        private void RadioButton4_CheckedChanged(object sender, EventArgs e)
-        {
-            if (radioButton4.Checked == true && UserList != null)
-            {
-                write_log("경험치 5배 이벤트 시작");
-                Packet("<exp_event> 5 </exp_event>");
+                double n = -1;
+                if (double.TryParse(drop_event_num.Text, out n))
+                {
+                    Packet("<drop_event> " + n + " </drop_event>");
+                    write_log("드랍율 " + n + "배 이벤트 시작");
+                    drop_event = n;
+                }
             }
         }
 

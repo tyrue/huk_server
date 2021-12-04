@@ -278,9 +278,17 @@ namespace SupremePlayServer
                         else if (GetMessage.Contains("<exp_event>"))
                         {
                             int n = 0;
-                            n = mainform.radioSelected();
                             if (mainform.exe_event > 0) n = mainform.exe_event;
                             SW.WriteLine("<exp_event>" + n + "</exp_event>");
+                            SW.Flush();
+                        }
+
+                        // 드랍율 이벤트 확인
+                        else if (GetMessage.Contains("<drop_event>"))
+                        {
+                            double n = 0;
+                            if (mainform.exe_event > 0) n = mainform.drop_event;
+                            SW.WriteLine("<drop_event>" + n + "</drop_event>");
                             SW.Flush();
                         }
 
