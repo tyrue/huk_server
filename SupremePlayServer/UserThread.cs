@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.IO;
+using System.Linq;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading;
 using System.Windows.Forms;
-using System.Linq;
-using Org.BouncyCastle.Utilities;
 
 namespace SupremePlayServer
 {
     public class UserThread
-    { 
+    {
         // Network Stream
         NetworkStream NS = null;
         StreamReader SR = null;
@@ -26,7 +25,7 @@ namespace SupremePlayServer
         public String UserName;
 
         // Get Packet List
-        systemdata sd;
+        Systemdata sd;
         List<String> plist;
         public Thread thread = null;
 
@@ -37,7 +36,7 @@ namespace SupremePlayServer
 
         // 타이머 생성 및 시작
         System.Timers.Timer timer2;
-        
+
         string[] ignore_ms =
         {
             "<mon_move",
@@ -69,7 +68,6 @@ namespace SupremePlayServer
         };
         public void startClient(TcpClient clientSocket)
         {
-            
             sd = mainform.sd;
             system_db = mainform.system_db;
             // Get Packet List
@@ -89,7 +87,6 @@ namespace SupremePlayServer
             timer2 = new System.Timers.Timer();
             timer2.Interval = 1000;
             timer2.Elapsed += new System.Timers.ElapsedEventHandler(timer_tick);
-
         }
 
         void timer_tick(object sender, EventArgs e)
@@ -159,7 +156,6 @@ namespace SupremePlayServer
                         // Registration
                         else if (GetMessage.Contains("<regist>"))
                         {
-
                             system_db.Registeration(NS, GetMessage);
                         }
 
@@ -270,6 +266,7 @@ namespace SupremePlayServer
                             }
                             catch (Exception e)
                             {
+                                mainform.write_log(e.ToString());
                                 //MessageBox.Show();
                             }
                         }
@@ -444,13 +441,35 @@ namespace SupremePlayServer
                             mainform.switch_send(data2[0], data2[1], int.Parse(data2[2]));
                         }
 
+                        else if (GetMessage.Contains("<party_quest_check>"))
+                        {
+                            string data = splitTag("party_quest_check", GetMessage);
+                            int map_id;
+                            if (int.TryParse(data, out map_id))
+                            {
+                                try
+                                {
+                                    int[] check = mainform.sd.checkPartyQuest(map_id);
+                                    if(check[0] != 0)
+                                    {
+                                        SW.WriteLine("<party_quest_check>" + check[0].ToString() + "," + check[1].ToString() + "</party_quest_check>");
+                                        SW.Flush();
+                                    }
+                                }
+                                catch (Exception e)
+                                {
+                                    mainform.write_log(e.ToString());
+                                }
+                            }
+                        }
+
                         else if (GetMessage.Contains("<monster_cooltime_reset>"))
                         {
                             // 스위치 id, 스위치 상태, 맵 id
                             string data = splitTag("monster_cooltime_reset", GetMessage);
                             string[] co1 = { "," };
                             String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
-                            if(data2.Length >= 2)
+                            if (data2.Length >= 2)
                                 mainform.monster_cooltime_reset(int.Parse(data2[0]), int.Parse(data2[1]));
                             else
                                 mainform.monster_cooltime_reset(int.Parse(data2[0]));
@@ -507,6 +526,6 @@ namespace SupremePlayServer
             return d2[0];
         }
 
-        
+
     }
 }
