@@ -1,19 +1,22 @@
-﻿using System;
+﻿using MySql.Data.MySqlClient;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using MySql.Data.MySqlClient;
 using System.IO;
-using System.Net;
 using System.Net.Sockets;
-using System.Windows.Forms;
+using System.Text;
 
 namespace SupremePlayServer
 {
     public class System_DB : UserThread
     {
-        private string DBInfo = "Server=127.0.0.1;Database=supremeplay;Uid=root;Pwd=abs753951;CharSet=utf8";
+        private string DBInfo =
+            //"Server=gamedata.cadmqqrnily5.ap-northeast-2.rds.amazonaws.com;" + // aws 외부 접속 db 주소
+            "Server=127.0.0.1;" +
+            "Database=supremeplay;" +
+            "Uid=root;" +
+            "Pwd=abs753951;" +
+            "CharSet=utf8";
+
 
         #region 회원가입
 
@@ -31,7 +34,7 @@ namespace SupremePlayServer
                     // get Data
                     string[] co = { "," };
                     d1 = splitTag("regist", data).Split(co, StringSplitOptions.RemoveEmptyEntries);
-                    
+
                     // DB Connection
                     conn.Open();
                     string sql = "SELECT* FROM user";
@@ -87,7 +90,7 @@ namespace SupremePlayServer
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.ToString());
+                mainform.write_log(e.ToString());
             }
         }
 
@@ -141,7 +144,7 @@ namespace SupremePlayServer
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.ToString());
+                mainform.write_log(e.ToString());
             }
 
             return UserName;
@@ -156,10 +159,10 @@ namespace SupremePlayServer
         {
             if (UserId == null) return;
             pkdata = splitTag("userdata", pkdata);
-            
-            string[] co1 = {"|"};
+
+            string[] co1 = { "|" };
             String[] data = pkdata.Split(co1, StringSplitOptions.None);
-            
+
             if (UserId.Equals(""))
                 return;
 
@@ -167,7 +170,7 @@ namespace SupremePlayServer
             String k_name = "";
             String u_query = "";
 
-            
+
             try
             {
                 for (int i = 1; i < data.Length; i++)
@@ -184,7 +187,7 @@ namespace SupremePlayServer
                     else
                         query += "'";
                 }
-                
+
                 using (MySqlConnection conn = new MySqlConnection(DBInfo))
                 {
                     // DB Connection
@@ -219,7 +222,7 @@ namespace SupremePlayServer
                     // DB Connection
                     conn.Open();
                     string sql = "";
-                    if(u_query != "")
+                    if (u_query != "")
                     {
                         sql = "" +
                             "UPDATE userinfo" +
@@ -231,7 +234,7 @@ namespace SupremePlayServer
                         //sql = "INSERT INTO userinfo VALUES(" + query + ") ON DUPLICATE KEY UPDATE id = ''";
                         sql = "INSERT INTO userinfo VALUES(" + query + ")";
                     }
-                        
+
                     MySqlCommand cmd = new MySqlCommand(sql, conn);
                     cmd.ExecuteNonQuery();
                     conn.Close();
@@ -240,7 +243,7 @@ namespace SupremePlayServer
 
             catch (Exception e)
             {
-                MessageBox.Show(e.Message);
+                mainform.write_log(e.ToString());
             }
         }
 
@@ -284,32 +287,40 @@ namespace SupremePlayServer
             }
             catch (Exception e)
             {
-               MessageBox.Show(e.ToString());
+                mainform.write_log(e.ToString());
             }
         }
         #endregion
 
         public Dictionary<int, string> SendMap()
         {
-            Dictionary<int, string> data = new Dictionary<int, string>();
-            using (MySqlConnection conn = new MySqlConnection(DBInfo))
+            try
             {
-                // DB Connection
-                conn.Open();
-
-                string sql = "" +
-                    "SELECT* FROM map_name " +
-                    "ORDER BY id ASC";
-                MySqlCommand cmd = new MySqlCommand(sql, conn);
-                MySqlDataReader rdr = cmd.ExecuteReader();
-
-                while (rdr.Read())
+                Dictionary<int, string> data = new Dictionary<int, string>();
+                using (MySqlConnection conn = new MySqlConnection(DBInfo))
                 {
-                    data[int.Parse(rdr[0].ToString())] = rdr[1].ToString();
+                    // DB Connection
+                    conn.Open();
+
+                    string sql = "" +
+                        "SELECT* FROM map_name " +
+                        "ORDER BY id ASC";
+                    MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    MySqlDataReader rdr = cmd.ExecuteReader();
+
+                    while (rdr.Read())
+                    {
+                        data[int.Parse(rdr[0].ToString())] = rdr[1].ToString();
+                    }
+                    conn.Close();
                 }
-                conn.Close();
+                return data;
             }
-            return data;
+            catch (Exception e)
+            {
+                mainform.write_log(e.ToString());
+                return null;
+            }
         }
 
         #region 맵 id에 대한 이름 저장
@@ -391,7 +402,7 @@ namespace SupremePlayServer
 
             catch (Exception e)
             {
-                MessageBox.Show(e.Message);
+                mainform.write_log(e.ToString());
             }
         }
         #endregion

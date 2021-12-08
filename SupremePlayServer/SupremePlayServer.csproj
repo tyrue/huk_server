@@ -95,7 +95,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="systemdata.cs" />
+    <Compile Include="Systemdata.cs" />
     <Compile Include="System_DB.cs" />
     <Compile Include="UserThread.cs" />
     <EmbeddedResource Include="MainForm.resx">

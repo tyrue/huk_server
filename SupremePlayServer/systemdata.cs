@@ -1,28 +1,38 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace SupremePlayServer
 {
-    public class systemdata
+    public class Systemdata
     {
         public Dictionary<int, List<Monster>> monster_data; // 맵에 존재하는 몬스터의 데이터를 저장
-        public Dictionary<int, List<Item>> item_data; // 맵에 존재하는 아이템의 데이터를 저장
+        public Dictionary<int, List<Item2>> item_data2; // 맵에 존재하는 아이템의 데이터를 저장
         public Dictionary<int, string> map_data; // 맵의 이름 저장
-        System_DB system_db;
-        
-        public systemdata()
+        public System_DB system_db;
+        public MainForm mainForm;
+        Dictionary<int, int[]> party_quest_map_id;
+        public Systemdata()
         {
-            monster_data = new Dictionary<int, List<Monster>>();
-            item_data = new Dictionary<int, List<Item>>();
-            map_data = new Dictionary<int, string>();
-            system_db = new System_DB();
-            map_data = system_db.SendMap();
+            try
+            {
+                monster_data = new Dictionary<int, List<Monster>>();
+                item_data2 = new Dictionary<int, List<Item2>>();
+
+                map_data = new Dictionary<int, string>();
+                system_db = new System_DB();
+                map_data = system_db.SendMap();
+                
+                // 파티 퀘스트 맵 아이디 저장
+                party_quest_map_id = new Dictionary<int, int[]>();
+                party_quest_map_id.Add(1, new int[] { 51,   1015 });
+                party_quest_map_id.Add(2, new int[] { 113,  1143 });
+                party_quest_map_id.Add(3, new int[] { 404,  1152 });
+            }
+            catch (Exception e)
+            {
+                mainForm.write_log(e.ToString());
+            }
         }
 
         public List<String> getAllpacketList()
@@ -35,7 +45,8 @@ namespace SupremePlayServer
             plist.Add("<23>");      // 몹 정보 공유
             plist.Add("<27>");      // 애니메이션 공유
             plist.Add("<partyhill>"); // 파티 힐
-            plist.Add("<Drop>");    // 버리기
+            plist.Add("<Drop>");    // 템 드랍
+            plist.Add("<Drop_Get>");    // 템 삭제
             plist.Add("<drop_create>"); // 템 드랍
             plist.Add("<drop_del>");    // 템 삭제
             plist.Add("<Guild_Message>"); // 길드 메시지
@@ -85,116 +96,193 @@ namespace SupremePlayServer
 
         public void SaveMonster(string data)
         {
-            string[] d = data.Split(',');
-            bool sw = false;
-            int id = int.Parse(d[0]);
-            if (!monster_data.ContainsKey(id))
+            try
             {
-                monster_data[id] = new List<Monster>();
-                sw = false;
-            }
-            else
-            {
-                Monster ii = null;
-
-                var temp = from i in monster_data[id]
-                        where (i.id == int.Parse(d[1]))
-                        select i;
-                if (temp != null && temp.Count() > 0)
+                string[] d = data.Split(',');
+                bool sw = false;
+                int id = int.Parse(d[0]);
+                if (!monster_data.ContainsKey(id))
                 {
-                    sw = true;
-                    ii = temp.First();
-                    ii.hp = int.Parse(d[2]);
-                    ii.x = int.Parse(d[3]);
-                    ii.y = int.Parse(d[4]);
-                    ii.direction = int.Parse(d[5]);
-                    ii.respawn = int.Parse(d[6]);
-                    ii.dead = ii.hp <= 0 ? true : false;
+                    monster_data[id] = new List<Monster>();
+                    sw = false;
                 }
                 else
                 {
-                    sw = false;
+                    Monster ii = null;
+
+                    var temp = from i in monster_data[id]
+                               where (i.id == int.Parse(d[1]))
+                               select i;
+                    if (temp != null && temp.Count() > 0)
+                    {
+                        sw = true;
+                        ii = temp.First();
+                        ii.hp = int.Parse(d[2]);
+                        ii.x = int.Parse(d[3]);
+                        ii.y = int.Parse(d[4]);
+                        ii.direction = int.Parse(d[5]);
+                        ii.respawn = int.Parse(d[6]);
+                        ii.dead = ii.hp <= 0 ? true : false;
+                    }
+                    else
+                    {
+                        sw = false;
+                    }
+                }
+
+                if (!sw)
+                {
+                    Monster m = new Monster();
+                    m.map_id = id;
+                    m.id = int.Parse(d[1]);
+                    m.hp = int.Parse(d[2]);
+                    m.x = int.Parse(d[3]);
+                    m.y = int.Parse(d[4]);
+                    m.direction = int.Parse(d[5]);
+                    m.respawn = int.Parse(d[6]);
+                    m.dead = m.hp <= 0 ? true : false;
+                    monster_data[m.map_id].Add(m);
                 }
             }
-
-            if(!sw)
+            catch (Exception e)
             {
-                Monster m = new Monster();
-                m.map_id = id;
-                m.id = int.Parse(d[1]);
-                m.hp = int.Parse(d[2]);
-                m.x = int.Parse(d[3]);
-                m.y = int.Parse(d[4]);
-                m.direction = int.Parse(d[5]);
-                m.respawn = int.Parse(d[6]);
-                m.dead = m.hp <= 0 ? true : false;
-                monster_data[m.map_id].Add(m);
+                mainForm.write_log(e.ToString());
+            }
+        }
+
+        public void SaveItem2(string data)
+        {
+            try
+            {
+                string[] d = data.Split(',');
+                Item2 i = new Item2();
+
+                i.d_id = int.Parse(d[0]);
+                i.type2 = int.Parse(d[1]);
+                i.type1 = int.Parse(d[2]);
+                i.id = int.Parse(d[3]);
+                i.map_id = int.Parse(d[4]);
+                i.x = int.Parse(d[5]);
+                i.y = int.Parse(d[6]);
+                i.num = int.Parse(d[7]);
+
+                if (!item_data2.ContainsKey(i.map_id))
+                    item_data2[i.map_id] = new List<Item2>();
+                item_data2[i.map_id].Add(i);
+            }
+            catch (Exception e)
+            {
+                mainForm.write_log(e.ToString());
             }
         }
 
 
-        public void SaveItem(string data)
+        public void DelItem2(string data) // 맵id, id
         {
-            string[] d = data.Split(',');
-            Item i = new Item();
-            i.map_id = int.Parse(d[0]);
-            i.id = int.Parse(d[1]);
-            i.x = int.Parse(d[2]);
-            i.y = int.Parse(d[3]);
+            try
+            {
+                string[] s = data.Split(',');
+                int map_id = int.Parse(s[1]);
+                int id = int.Parse(s[0]);
 
-            if (!item_data.ContainsKey(int.Parse(d[0])))
-                item_data[int.Parse(d[0])] = new List<Item>();
-            item_data[int.Parse(d[0])].Add(i);
-        }
-
-        public void DelItem(string data)
-        {
-            string[] s = data.Split(',');
-            if (!item_data.ContainsKey(int.Parse(s[0]))) return;
-            var d = from i in item_data[int.Parse(s[0])]
-                    where (i.map_id == int.Parse(s[0]) && i.x == int.Parse(s[2]) && i.y == int.Parse(s[3]))
-                    select i;
-            if(d != null && d.Count() > 0)
-                item_data[int.Parse(s[0])].Remove(d.First());
+                if (!item_data2.ContainsKey(map_id)) return;
+                var d = from i in item_data2[map_id]
+                        where i.d_id == id
+                        select i;
+                if (d != null && d.Count() > 0)
+                    item_data2[map_id].Remove(d.First());
+            }
+            catch (Exception e)
+            {
+                mainForm.write_log(e.ToString());
+            }
         }
 
         public string SendMap(int id)
         {
-            if (map_data.ContainsKey(id)) return map_data[id];
-            else
+            try
             {
-                map_data = system_db.SendMap();
                 if (map_data.ContainsKey(id)) return map_data[id];
-                else return "null";
+                else
+                {
+                    map_data = system_db.SendMap();
+                    if (map_data.ContainsKey(id)) return map_data[id];
+                    else return "null";
+                }
+            }
+            catch (Exception e)
+            {
+                mainForm.write_log(e.ToString());
+                return "null";
             }
         }
 
         public List<string> respawnMonster2()
         {
-            List<string> list = new List<string>();
-            var d = from i in monster_data
-                    from ii in i.Value
-                    where (ii.respawn > 0 && ii.dead)
-                    select ii;
-
-            foreach (var data in d)
+            try
             {
-                data.respawn -= 60;
-                if (data.respawn <= 0)
+                List<string> list = new List<string>();
+                var d = from i in monster_data
+                        from ii in i.Value
+                        where (ii.respawn > 0 && ii.dead)
+                        select ii;
+
+                foreach (var data in d)
                 {
-                    data.respawn = 0;
-                    string s = data.map_id + "," + data.id + "," + data.x + "," + data.y + "," + data.direction;
-                    data.dead = false;
-                    list.Add(s);
+                    data.respawn -= 60;
+                    if (data.respawn <= 0)
+                    {
+                        data.respawn = 0;
+                        string s = data.map_id + "," + data.id + "," + data.x + "," + data.y + "," + data.direction;
+                        data.dead = false;
+                        list.Add(s);
+                    }
                 }
+                return list;
             }
-            return list;
+            catch (Exception e)
+            {
+                mainForm.write_log(e.ToString());
+                return null;
+            }
         }
 
         public void DelAllItem()
         {
-            item_data.Clear();
+            item_data2.Clear();
         }
 
+        public int[] checkPartyQuest(int id)
+        {
+            int[] data = new int[2]; // id, on/off
+            try
+            {
+                if (party_quest_map_id.ContainsKey(id))
+                {
+                    int map_id = party_quest_map_id[id][0];
+                    data[0] = party_quest_map_id[id][1]; // 스위치 id
+                    if (mainForm.MapUser2.ContainsKey(map_id)) // 만약 해당 맵에 사람이 있다면 파티 퀘스트 체크 스위치 on
+                    {
+                        if (mainForm.MapUser2[map_id].Count > 0)
+                        {
+                            data[1] = 1;
+                        }
+                        else
+                        {
+                            data[1] = 0;
+                        }
+                    }
+                    else
+                    {
+                        data[1] = 0;
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                mainForm.write_log(e.ToString());
+            }
+            return data;
+        }
     }
 }

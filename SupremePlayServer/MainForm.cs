@@ -1,33 +1,34 @@
 using System;
 using System.Collections.Generic;
-using System.Windows.Forms;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using System.IO;
-using Google.Protobuf.Collections;
-using System.Diagnostics;
+using System.Windows.Forms;
 
 namespace SupremePlayServer
 {
     public partial class MainForm : Form
     {
-        public systemdata sd;
+        public Systemdata sd;
         public List<UserThread> UserList;
         public Dictionary<int, List<UserThread>> MapUser2;
         public System_DB system_db;
         public int count_down = 0; // 리붓 카운트 다운
         System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
         public int exe_event = 0;
+        public double drop_event = 0;
         public int max_user_name = 10; // 전체 인원 제한
         public string version = Properties.Resources.VERSION;
 
         public MainForm()
         {
-            system_db = new System_DB();
-            sd = new systemdata();
+            sd = new Systemdata();
+            system_db = sd.system_db; // new System_DB();
+            sd.mainForm = this;
+            system_db.mainform = this;
+
             InitializeComponent();
-            radioButton1.Select(); // 경험치 이벤트 없음
             radioButton_1.Select(); // 처음에 공지로 미리 선택됨
 
             // 타이머 생성 및 시작
@@ -41,11 +42,12 @@ namespace SupremePlayServer
             write_log("서버 시작");
             write_log("몬스터 데이터 삭제");
 
+
             try
             {
                 string dir = "./";
                 FileInfo fileInfo = new FileInfo(dir + "version.txt");
-                if(!fileInfo.Exists)
+                if (!fileInfo.Exists)
                 {
                     using (StreamWriter verFile = new StreamWriter(@dir + "version.txt", true))
                     {
@@ -73,7 +75,7 @@ namespace SupremePlayServer
                 label3.Text = "현재 시간 : " + t;
                 // 초당 몬스터 db에서 체력 0인 몹의 리젠 시간을 줄인다.
                 List<string> list = sd.respawnMonster2();
-                if(list.Count > 0)
+                if (list.Count > 0)
                 {
                     foreach (var s in list)
                     {
@@ -81,7 +83,7 @@ namespace SupremePlayServer
                     }
                 }
 
-                if(t.Contains(":00:00"))
+                if (t.Contains(":00:00"))
                 {
                     write_log("맵의 모든 아이템 삭제");
                     Packet("<chat>맵의 모든 아이템들이 삭제 됩니다.</chat>");
@@ -114,7 +116,7 @@ namespace SupremePlayServer
             }
             catch
             {
-                MessageBox.Show(e.ToString());
+                write_log(e.ToString());
             }
         }
 
@@ -125,7 +127,7 @@ namespace SupremePlayServer
             List<String> a = new List<string> { "0" };
 
             MapUser2 = new Dictionary<int, List<UserThread>>();
-            
+
             // Listen New User Connection
             Thread echo_thread = new Thread(Thread_NetWorkListening);
             echo_thread.Start();
@@ -151,7 +153,7 @@ namespace SupremePlayServer
                     UserThread userthread = new UserThread();
                     userthread.mainform = this;
                     userthread.startClient(client);
-                    
+
                     UserList.Add(userthread);
 
                     if (!MapUser2.ContainsKey(0))
@@ -161,7 +163,7 @@ namespace SupremePlayServer
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.ToString());
+                write_log(e.ToString());
             }
             finally
             {
@@ -181,7 +183,6 @@ namespace SupremePlayServer
                         continue;
                     try
                     {
-                        //MessageBox.Show(data);
                         UserList[i].SW.WriteLine(data); // 메시지 보내기
                         UserList[i].SW.Flush();
                     }
@@ -202,7 +203,7 @@ namespace SupremePlayServer
                 string[] word = splitTag("chat1", data).Split(',');
                 write_log(word[0]);
                 int visibleItems = listBox2.ClientSize.Height / listBox2.ItemHeight;
-                listBox2.TopIndex = Math.Max(listBox2.Items.Count - visibleItems + 1, 0);   
+                listBox2.TopIndex = Math.Max(listBox2.Items.Count - visibleItems + 1, 0);
             }
             if (data.Contains("<chat>"))
             {
@@ -243,12 +244,20 @@ namespace SupremePlayServer
 
         public void removeMapUser(int map_i, UserThread userThread)
         {
-            MapUser2[map_i].Remove(userThread);   
             try
             {
+                if (MapUser2.ContainsKey(map_i) && MapUser2[map_i].Contains(userThread))
+                {
+                    MapUser2[map_i].Remove(userThread);
+                }
+                else
+                {
+                    return;
+                }
+
                 if (MapUser2[map_i].Count > 0)
                 {
-                    if(MapUser2[map_i][0].thread.IsAlive)
+                    if (MapUser2[map_i][0].thread.IsAlive)
                     {
                         MapUser2[map_i][0].SW.WriteLine("<map_player>1</map_player>"); // 메시지 보내기
                         MapUser2[map_i][0].SW.Flush();
@@ -266,40 +275,27 @@ namespace SupremePlayServer
         {
             try
             {
+                if (userthread == null) return;
                 // 접속이 되지 않은 유저 삭제 : 중간에 팅긴 유저에 대한 처리
                 if (!userthread.client.Connected) // 접속이 끊겼는데 접속 되어 있다고 처리되서 계속 오류나고 있음
                 {
                     int map_i = userthread.last_map_id;
                     removeMapUser(map_i, userthread);
+                    UserList.Remove(userthread);
+                    PlayerCount();
+                    userthread.thread.Abort();
 
                     if (userthread.UserName != null)
                     {
-                        UserList.Remove(userthread);
-                        PlayerCount();
-                        userthread.thread.Abort();
-                        if (userthread.UserName != null)
-                        {   
-                            Packet("<9>" + userthread.UserCode + "</9>");
-                        }
-                    }
-
-                    if (userthread.thread != null)
-                    {
-                        UserList.Remove(userthread); // 여기서 문제인건데...
-                        PlayerCount();
-                        userthread.thread.Abort();
-                        if (userthread.UserName != null)
-                        {
-                            write_log(userthread.UserName + " 종료");
-                            Packet("<chat1>(알림): '" + userthread.UserName + "'님께서 종료하셨습니다.</chat1>");
-                            Packet("<9>" + userthread.UserCode + "</9>");
-                        }
+                        write_log(userthread.UserName + " 종료");
+                        Packet("<chat1>(알림): '" + userthread.UserName + "'님께서 종료하셨습니다.</chat1>");
+                        Packet("<9>" + userthread.UserCode + "</9>");
                     }
                 }
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.ToString());
+                write_log(e.ToString());
             }
         }
 
@@ -321,7 +317,7 @@ namespace SupremePlayServer
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.ToString());
+                write_log(e.ToString());
             }
 
             return check;
@@ -358,27 +354,6 @@ namespace SupremePlayServer
             String[] d2 = d1[0].Split(co2, StringSplitOptions.RemoveEmptyEntries);
 
             return d2[0];
-        }
-
-        public int radioSelected()
-        {
-            if(radioButton1.Checked)
-            {
-                return 0; // 경험치 이벤 없음
-            }
-            else if (radioButton2.Checked)
-            {
-                return 2; // 경험치 2배
-            }
-            else if (radioButton3.Checked)
-            {
-                return 3; // 경험치 3배
-            }
-            else if (radioButton4.Checked)
-            {
-                return 5; // 경험치 5배
-            }
-            return 0;
         }
 
         // 공지 보내기
@@ -443,9 +418,9 @@ namespace SupremePlayServer
 
         private void TextBox1_TextChanged(object sender, EventArgs e)
         {
-            
+
         }
-        
+
         private void message_keyDown(object sender, KeyPressEventArgs e)
         {
             if (e.KeyChar == '\r')
@@ -459,48 +434,32 @@ namespace SupremePlayServer
             if (e.KeyChar == '\r')
             {
                 int n = -1;
-                if(int.TryParse(exp_event_num.Text, out n))
+                if (int.TryParse(exp_event_num.Text, out n))
                 {
-                    Packet("<exp_event> " + exp_event_num.Text + " </exp_event>");
+                    Packet("<exp_event> " + n + " </exp_event>");
                     write_log("경험치 " + n + "배 이벤트 시작");
                     exe_event = n;
+
+                    int visibleItems = listBox2.ClientSize.Height / listBox2.ItemHeight;
+                    listBox2.TopIndex = Math.Max(listBox2.Items.Count - visibleItems + 1, 0);
                 }
             }
         }
 
-        private void RadioButton1_CheckedChanged(object sender, EventArgs e)
+        private void drop_event_send(object sender, KeyPressEventArgs e)
         {
-            if (radioButton1.Checked == true && UserList != null)
+            if (e.KeyChar == '\r')
             {
-                write_log("경험치 이벤트 종료");
-                Packet("<exp_event> 0 </exp_event>");
-            }
-        }
+                double n = -1;
+                if (double.TryParse(drop_event_num.Text, out n))
+                {
+                    Packet("<drop_event> " + n + " </drop_event>");
+                    write_log("드랍율 " + n + "배 이벤트 시작");
+                    drop_event = n;
 
-        private void RadioButton2_CheckedChanged(object sender, EventArgs e)
-        {
-            if (radioButton2.Checked == true && UserList != null)
-            {
-                write_log("경험치 2배 이벤트 시작");
-                Packet("<exp_event> 2 </exp_event>");
-            }
-        }
-
-        private void RadioButton3_CheckedChanged(object sender, EventArgs e)
-        {
-            if (radioButton3.Checked == true && UserList != null)
-            {
-                write_log("경험치 3배 이벤트 시작");
-                Packet("<exp_event> 3 </exp_event>");
-            }
-        }
-
-        private void RadioButton4_CheckedChanged(object sender, EventArgs e)
-        {
-            if (radioButton4.Checked == true && UserList != null)
-            {
-                write_log("경험치 5배 이벤트 시작");
-                Packet("<exp_event> 5 </exp_event>");
+                    int visibleItems = listBox2.ClientSize.Height / listBox2.ItemHeight;
+                    listBox2.TopIndex = Math.Max(listBox2.Items.Count - visibleItems + 1, 0);
+                }
             }
         }
 
@@ -522,7 +481,7 @@ namespace SupremePlayServer
 
         private void ListBox1_MouseDown(object sender, MouseEventArgs e)
         {
-            if(e.Button == MouseButtons.Right)
+            if (e.Button == MouseButtons.Right)
             {
                 if (listBox1.SelectedIndex >= 0)
                 {
@@ -560,7 +519,7 @@ namespace SupremePlayServer
                 if (str == "강퇴")
                 {
                     string name = UserList[listBox1.SelectedIndex].UserName;
-                    if(textBox1.Text == "")
+                    if (textBox1.Text == "")
                         Packet("<ki>" + name + ",강퇴 당하셨습니다.,</ki>");
                     else
                         Packet("<ki>" + name + "," + textBox1.Text + ",</ki>");
@@ -625,14 +584,14 @@ namespace SupremePlayServer
 
         public void monster_cooltime_reset(int map_id, int mon_id = 0)
         {
-            foreach(var v in sd.monster_data[map_id])
+            foreach (var v in sd.monster_data[map_id])
             {
-                if(mon_id != 0)
+                if (mon_id != 0)
                 {
                     if (v.id == mon_id && v.respawn > 0)
                         v.respawn = 10;
                 }
-                else if (v.respawn > 0) 
+                else if (v.respawn > 0)
                     v.respawn = 120;
             }
         }
@@ -655,6 +614,8 @@ namespace SupremePlayServer
                         logfile.WriteLine("[" + t + "]" + data);
                     }
                 }
+                int visibleItems = listBox2.ClientSize.Height / listBox2.ItemHeight;
+                listBox2.TopIndex = Math.Max(listBox2.Items.Count - visibleItems + 1, 0);
             }
             catch
             {
