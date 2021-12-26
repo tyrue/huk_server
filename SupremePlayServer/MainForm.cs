@@ -13,6 +13,8 @@ namespace SupremePlayServer
         public Systemdata sd;
         public List<UserThread> UserList;
         public Dictionary<int, List<UserThread>> MapUser2;
+        public Dictionary<string, UserThread> UserByNameDict;
+
         public System_DB system_db;
         public int count_down = 0; // 리붓 카운트 다운
         System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
@@ -20,13 +22,18 @@ namespace SupremePlayServer
         public double drop_event = 0;
         public int max_user_name = 10; // 전체 인원 제한
         public string version = Properties.Resources.VERSION;
+        Random random;
+        List<string> print_chat_tag; // 서버에 남길 채팅 내용 태그
 
         public MainForm()
         {
+            random = new Random();
             sd = new Systemdata();
             system_db = sd.system_db; // new System_DB();
             sd.mainForm = this;
             system_db.mainform = this;
+            print_chat_tag = new List<string>();
+            make_chat_tag(print_chat_tag);
 
             InitializeComponent();
             radioButton_1.Select(); // 처음에 공지로 미리 선택됨
@@ -37,12 +44,23 @@ namespace SupremePlayServer
             timer2.Tick += new EventHandler(timer_tick);
             timer2.Start();
 
+            // 랜덤 메시지용 타이머
+            System.Windows.Forms.Timer timer3 = new System.Windows.Forms.Timer();
+            timer3.Interval = 1000 * 180; 
+            timer3.Tick += new EventHandler(random_server_msg);
+            timer3.Start();
+
+            // 배 목적지 타이머
+            System.Windows.Forms.Timer timer4 = new System.Windows.Forms.Timer();
+            timer4.Interval = 1000 * 60 * 20;
+            timer4.Tick += new EventHandler(change_ship_target);
+            timer4.Start();
+
             // 서버 시작할 때 몹 데이터 정리
             write_log("------------------------------");
             write_log("서버 시작");
             write_log("몬스터 데이터 삭제");
-
-
+            now_ship_target();
             try
             {
                 string dir = "./";
@@ -67,6 +85,15 @@ namespace SupremePlayServer
             }
         }
 
+        public void make_chat_tag(List<string> tag_list)
+        {
+            tag_list.Add("chat");
+            tag_list.Add("chat1");
+            tag_list.Add("chat2");
+            tag_list.Add("partymessage");
+            tag_list.Add("whispers");
+        }
+
         void timer_tick(object sender, EventArgs e)
         {
             try
@@ -79,15 +106,14 @@ namespace SupremePlayServer
                 {
                     foreach (var s in list)
                     {
-                        Packet("<respawn>" + s + "</respawn>");
+                        String[] data = s.Split(',');
+                        Map_Packet("<respawn>" + s + "</respawn>", int.Parse(data[0]));
                     }
                 }
 
                 if (t.Contains(":00:00"))
                 {
-                    write_log("맵의 모든 아이템 삭제");
                     Packet("<chat>맵의 모든 아이템들이 삭제 됩니다.</chat>");
-
                     sd.DelAllItem();
                 }
             }
@@ -104,7 +130,6 @@ namespace SupremePlayServer
                 count_down--;
                 textBox2.Text = count_down.ToString();
                 Packet("<chat>" + count_down + "초 후 리붓합니다. 안전한 곳으로 이동하시길 바랍니다.</chat>");
-                write_log("리붓 " + count_down + "초 전");
                 if (count_down <= 0) // 전체 강퇴
                 {
                     Packet("<ki>모두,비바람이 휘몰아치고 있습니다. 잠시만 기다려 주세요.,</ki>");
@@ -120,13 +145,57 @@ namespace SupremePlayServer
             }
         }
 
+        void random_server_msg(object sender, EventArgs e) // 리붓용 타이머 이벤트
+        {
+            try
+            {
+                if (UserList.Count == 0) return;
+                int i = random.Next(0, sd.random_server_msg.Count);
+                string msg = sd.random_server_msg[i];
+                Packet("<chat2>[도움]"+ msg + "</chat2>");
+            }
+            catch
+            {
+                write_log(e.ToString());
+            }
+        }
+
+        void change_ship_target(object sender, EventArgs e) // 리붓용 타이머 이벤트
+        {
+            try
+            {
+                now_ship_target();
+            }
+            catch
+            {
+                write_log(e.ToString());
+            }
+        }
+
+        public int now_ship_target()
+        {
+            int t = int.Parse(DateTime.Now.ToString("mm"));
+            int val = -1;
+            if ((0 < t && t < 10) || (20 < t && t < 30) || (40 < t && t < 50))
+            {
+                ship_target_name.Text = "일본";
+                val = 0;
+            }
+            else if ((10 < t && t < 20) || (30 < t && t < 40) || (50 < t))
+            {
+                ship_target_name.Text = "고균도";
+                val = 1;
+            }
+            return val;
+        }
+
         private void Form1_Load(object sender, EventArgs e)
         {
             // Initialize
             UserList = new List<UserThread>();
             List<String> a = new List<string> { "0" };
-
             MapUser2 = new Dictionary<int, List<UserThread>>();
+            UserByNameDict = new Dictionary<string, UserThread>();
 
             // Listen New User Connection
             Thread echo_thread = new Thread(Thread_NetWorkListening);
@@ -198,19 +267,16 @@ namespace SupremePlayServer
                 }
             }
 
-            if (data.Contains("<chat1>"))
+            foreach(string tag in print_chat_tag)
             {
-                string[] word = splitTag("chat1", data).Split(',');
-                write_log(word[0]);
-                int visibleItems = listBox2.ClientSize.Height / listBox2.ItemHeight;
-                listBox2.TopIndex = Math.Max(listBox2.Items.Count - visibleItems + 1, 0);
-            }
-            if (data.Contains("<chat>"))
-            {
-                string[] word = splitTag("chat", data).Split(',');
-                write_log(word[0]);
-                int visibleItems = listBox2.ClientSize.Height / listBox2.ItemHeight;
-                listBox2.TopIndex = Math.Max(listBox2.Items.Count - visibleItems + 1, 0);
+                if (data.Contains("<" + tag + ">"))
+                {
+                    string word = splitTag(tag, data);
+                    write_log(word);
+                    int visibleItems = listBox2.ClientSize.Height / listBox2.ItemHeight;
+                    listBox2.TopIndex = Math.Max(listBox2.Items.Count - visibleItems + 1, 0);
+                    break;
+                }
             }
         }
 
@@ -282,15 +348,16 @@ namespace SupremePlayServer
                     int map_i = userthread.last_map_id;
                     removeMapUser(map_i, userthread);
                     UserList.Remove(userthread);
+                    if(!userthread.UserName.Equals(string.Empty))
+                        UserByNameDict.Remove(userthread.UserName);
                     PlayerCount();
-                    userthread.thread.Abort();
-
                     if (userthread.UserName != null)
                     {
                         write_log(userthread.UserName + " 종료");
                         Packet("<chat1>(알림): '" + userthread.UserName + "'님께서 종료하셨습니다.</chat1>");
                         Packet("<9>" + userthread.UserCode + "</9>");
                     }
+                    userthread.thread.Abort();
                 }
             }
             catch (Exception e)
@@ -535,6 +602,7 @@ namespace SupremePlayServer
             int n = -1;
             if (int.TryParse(textBox2.Text, out n))
             {
+                if (timer != null && timer.Enabled) return;
                 timer = new System.Windows.Forms.Timer();
                 timer.Interval = 1000; // 몹 리젠 시간
                 count_down = n;
@@ -584,7 +652,7 @@ namespace SupremePlayServer
 
         public void monster_cooltime_reset(int map_id, int mon_id = 0)
         {
-            foreach (var v in sd.monster_data[map_id])
+            foreach (var v in sd.monster_data[map_id].Values)
             {
                 if (mon_id != 0)
                 {

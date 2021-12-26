@@ -64,8 +64,17 @@ namespace SupremePlayServer
             "<npt_move",
             "<map_chat",
             "<27",
-            "<show_range_skill"
+            "<show_range_skill",
+            "<hp",
+            "<monster",
+            "<drop_del",
+            "<del_item",
+            "<drop_create",
+            "<attack_effect",
+            "<skill_effectm",
+            "<monster_chat",
         };
+
         public void startClient(TcpClient clientSocket)
         {
             sd = mainform.sd;
@@ -195,6 +204,7 @@ namespace SupremePlayServer
                                 // Set UserName, UserId
                                 UserName = words[0];
                                 UserId = words[1];
+                                mainform.UserByNameDict.Add(UserName, this);
                                 SW.WriteLine("<sever_msg>흑부엉의 바람의나라에 오신것을 환영합니다.</sever_msg>");
                             }
 
@@ -333,7 +343,7 @@ namespace SupremePlayServer
                         {
                             //MessageBox.Show("몬스터 정보 요청");
                             if (!sd.monster_data.ContainsKey(last_map_id)) continue;
-                            List<Monster> da = sd.monster_data[last_map_id];
+                            var da = sd.monster_data[last_map_id].Values;
                             foreach (var d in da)
                             {
                                 string s = d.map_id + "," + d.id + "," + d.hp + "," + d.x + "," + d.y + "," + d.direction + "," + d.respawn;
@@ -342,6 +352,20 @@ namespace SupremePlayServer
                             SW.Flush();
                         }
 
+                        // 몬스터 마력 공유 : id, val
+                        else if (GetMessage.Contains("<monster_sp>"))
+                        {
+                            if (!sd.monster_data.ContainsKey(last_map_id)) continue;
+                            string data = system_db.splitTag("monster_sp", GetMessage);
+                            string[] co1 = { "," };
+                            String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
+
+                            int id = int.Parse(data2[0]);
+                            int sp = int.Parse(data2[1]);
+
+                            sd.monster_data[last_map_id][id].sp = sp;
+                            mainform.Invoke((MethodInvoker)(() => mainform.Map_Packet(GetMessage, last_map_id, UserCode)));
+                        }
 
                         // DB에 아이템 데이터 저장
                         else if (GetMessage.Contains("<Drop>"))
@@ -408,7 +432,7 @@ namespace SupremePlayServer
                         // 유저 종료
                         else if (GetMessage.Contains("<9>"))
                         {
-                            mainform.removeMapUser(last_map_id, this);
+                            mainform.removethread(this);
                             if (!UserCode.Equals("*null*") && system_db.splitTag("9", GetMessage).Equals(UserCode))
                             {
                                 if (UserName != null)
@@ -463,6 +487,19 @@ namespace SupremePlayServer
                             }
                         }
 
+                        else if (GetMessage.Contains("<ship_time_check>"))
+                        {
+                            try
+                            {
+                                SW.WriteLine("<ship_time_check>" + mainform.now_ship_target() +"</ship_time_check>");
+                                SW.Flush();
+                            }
+                            catch (Exception e)
+                            {
+                                mainform.write_log(e.ToString());
+                            }
+                        }
+
                         else if (GetMessage.Contains("<monster_cooltime_reset>"))
                         {
                             // 스위치 id, 스위치 상태, 맵 id
@@ -477,9 +514,31 @@ namespace SupremePlayServer
 
                         else if (GetMessage.Contains("<npt_move>"))
                         {
-                            mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage)));
+                            mainform.Invoke((MethodInvoker)(() => mainform.Map_Packet(GetMessage, last_map_id)));
                         }
 
+                        else if (GetMessage.Contains("<whispers>"))
+                        {
+                            string data = splitTag("whispers", GetMessage);
+                            string[] co1 = { "," };
+                            String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
+
+                            string target = data2[0];
+                            string msg = data2[1];
+
+                            if(!mainform.UserByNameDict.ContainsKey(target))
+                            {
+                                SW.WriteLine("<whispers>귓속말 할 상대가 없습니다.</whispers>");
+                            }
+                            else
+                            {
+                                mainform.UserByNameDict[target].SW.WriteLine("<whispers>" + UserName + " : " + msg + "</whispers>");
+                                mainform.UserByNameDict[target].SW.Flush();
+                                msg = UserName + " -> " + target + " : " + msg;
+                                mainform.write_log(msg);
+                            }
+                            SW.Flush();
+                        }
 
                         // 나머지는 다 방송함
                         else if (!GetMessage.Equals("null"))
@@ -508,6 +567,7 @@ namespace SupremePlayServer
                             SR.Close();
                             client.Close();
                             NS.Close();
+                            mainform.removethread(this);
                             return;
                         }
                     }

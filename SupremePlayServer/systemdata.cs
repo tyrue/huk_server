@@ -6,23 +6,27 @@ namespace SupremePlayServer
 {
     public class Systemdata
     {
-        public Dictionary<int, List<Monster>> monster_data; // 맵에 존재하는 몬스터의 데이터를 저장
+        public Dictionary<int, Dictionary<int, Monster>> monster_data; // 맵에 존재하는 몬스터의 데이터를 저장
         public Dictionary<int, List<Item2>> item_data2; // 맵에 존재하는 아이템의 데이터를 저장
         public Dictionary<int, string> map_data; // 맵의 이름 저장
         public System_DB system_db;
         public MainForm mainForm;
         Dictionary<int, int[]> party_quest_map_id;
+
+        public List<string> random_server_msg;
         public Systemdata()
         {
             try
             {
-                monster_data = new Dictionary<int, List<Monster>>();
+                monster_data = new Dictionary<int, Dictionary<int, Monster>>();
                 item_data2 = new Dictionary<int, List<Item2>>();
 
                 map_data = new Dictionary<int, string>();
                 system_db = new System_DB();
                 map_data = system_db.SendMap();
-                
+                random_server_msg = new List<string>();
+                make_random_msg(random_server_msg);
+
                 // 파티 퀘스트 맵 아이디 저장
                 party_quest_map_id = new Dictionary<int, int[]>();
                 party_quest_map_id.Add(1, new int[] { 51,   1015 });
@@ -33,6 +37,28 @@ namespace SupremePlayServer
             {
                 mainForm.write_log(e.ToString());
             }
+        }
+
+        public void make_random_msg(List<string> msg_list)
+        {
+            msg_list.Add("단축키 도움말은 F1키를 누르시면 볼 수 있습니다.");
+            msg_list.Add("강력한 무기는 가끔씩 추가로 데미지를 가합니다.");
+            msg_list.Add("부여성 남쪽의 해안가에서 파티퀘스트를 할 수 있습니다.");
+            msg_list.Add("포목점에서 용의비늘을 감정할 수 있습니다.");
+            msg_list.Add("놀이방의 피하기방에서 좋은 물건을 얻을 수 있을지도..");
+            msg_list.Add("npc와의 대화는 마우스 클릭으로도 가능합니다.");
+            msg_list.Add("죽었을 경우 마을의 성황당에서 부활할 수 있습니다.");
+            msg_list.Add("강력한 적들은 원거리에서 공격할 수 도 있습니다.");
+            msg_list.Add("\"/도움말\"을 입력하시면 명령어 도움말을 볼 수 있습니다.");
+            msg_list.Add("주술사는 원거리에서 강력한 마법을 사용하는 직업입니다.");
+            msg_list.Add("전사는 근거리에서 자신의 체력을 희생하여 강력한 한방을 주는 직업입니다.");
+            msg_list.Add("도사는 파티원에게 이로운 마법을 걸어주거나 회복해주는 직업입니다.");
+            msg_list.Add("도적은 빠른 몸놀림으로 근거리에서 적을 상대하는 직업입니다.");
+            msg_list.Add("레벨이 99가 되면 영혼사에서 경험치를 팔아서 체력, 마력을 살 수 있습니다.");
+            msg_list.Add("푸줏간에선 고기를, 주막에선 술을 살 수 있습니다.");
+            msg_list.Add("체력, 마력이 승급기준이 되면 부여 왕궁에서 승급 퀘스트를 진행 할 수 있습니다.");
+            msg_list.Add("승급 차수는 총 4차까지 있습니다.");
+            msg_list.Add("\"`\"키를 누르면 시스템 메뉴가 나옵니다.");
         }
 
         public List<String> getAllpacketList()
@@ -88,6 +114,7 @@ namespace SupremePlayServer
             plist.Add("<mon_damage>"); // 몬스터 데미지 표시
             plist.Add("<player_damage>"); // 플레이어 데미지 표시
             plist.Add("<map_chat>"); // 플레이어 말풍선 표시
+            plist.Add("<monster_chat>"); // 몬스터 말풍선 표시
             plist.Add("<attack_effect>"); // pvp 평타
             plist.Add("<skill_effect>"); // pvp 스킬
             plist.Add("<show_range_skill>"); // 스킬 보여주기
@@ -100,48 +127,36 @@ namespace SupremePlayServer
             {
                 string[] d = data.Split(',');
                 bool sw = false;
-                int id = int.Parse(d[0]);
-                if (!monster_data.ContainsKey(id))
+                int map_id = int.Parse(d[0]);
+                int id = int.Parse(d[1]);
+
+                if (!monster_data.ContainsKey(map_id))
                 {
-                    monster_data[id] = new List<Monster>();
-                    sw = false;
+                    monster_data[map_id] = new Dictionary<int, Monster>();
+                }
+
+                if (monster_data[map_id].ContainsKey(id))
+                {
+                    var temp = monster_data[map_id][id];
+                    temp.hp = int.Parse(d[2]);
+                    temp.x = int.Parse(d[3]);
+                    temp.y = int.Parse(d[4]);
+                    temp.direction = int.Parse(d[5]);
+                    temp.respawn = int.Parse(d[6]);
+                    temp.dead = temp.hp <= 0 ? true : false;
                 }
                 else
                 {
-                    Monster ii = null;
-
-                    var temp = from i in monster_data[id]
-                               where (i.id == int.Parse(d[1]))
-                               select i;
-                    if (temp != null && temp.Count() > 0)
-                    {
-                        sw = true;
-                        ii = temp.First();
-                        ii.hp = int.Parse(d[2]);
-                        ii.x = int.Parse(d[3]);
-                        ii.y = int.Parse(d[4]);
-                        ii.direction = int.Parse(d[5]);
-                        ii.respawn = int.Parse(d[6]);
-                        ii.dead = ii.hp <= 0 ? true : false;
-                    }
-                    else
-                    {
-                        sw = false;
-                    }
-                }
-
-                if (!sw)
-                {
                     Monster m = new Monster();
-                    m.map_id = id;
-                    m.id = int.Parse(d[1]);
+                    m.map_id = map_id;
+                    m.id = id;
                     m.hp = int.Parse(d[2]);
                     m.x = int.Parse(d[3]);
                     m.y = int.Parse(d[4]);
                     m.direction = int.Parse(d[5]);
                     m.respawn = int.Parse(d[6]);
                     m.dead = m.hp <= 0 ? true : false;
-                    monster_data[m.map_id].Add(m);
+                    monster_data[map_id][id] = m;
                 }
             }
             catch (Exception e)
@@ -222,8 +237,8 @@ namespace SupremePlayServer
             try
             {
                 List<string> list = new List<string>();
-                var d = from i in monster_data
-                        from ii in i.Value
+                var d = from i in monster_data.Values
+                        from ii in i.Values
                         where (ii.respawn > 0 && ii.dead)
                         select ii;
 

@@ -13,6 +13,7 @@ namespace SupremePlayServer
         public int x;
         public int y;
         public int hp;
+        public int sp;
         public int direction;
         public int respawn;
         public bool dead;
@@ -24,6 +25,7 @@ namespace SupremePlayServer
             x = 0;
             y = 0;
             hp = 0;
+            sp = 0;
             direction = 0;
             respawn = 0;
             dead = false;
