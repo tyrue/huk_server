@@ -22,7 +22,7 @@ namespace SupremePlayServer
 
         // User Data
         public String UserId;
-        public String UserName;
+        public String UserName = "";
 
         // Get Packet List
         Systemdata sd;
@@ -63,7 +63,7 @@ namespace SupremePlayServer
             "<partyhill",
             "<npt_move",
             "<map_chat",
-            "<27",
+            "<27", // 애니메이션 재생
             "<show_range_skill",
             "<hp",
             "<monster",
@@ -71,7 +71,7 @@ namespace SupremePlayServer
             "<del_item",
             "<drop_create",
             "<attack_effect",
-            "<skill_effectm",
+            "<skill_effect",
             "<monster_chat",
         };
 
@@ -367,6 +367,61 @@ namespace SupremePlayServer
                             mainform.Invoke((MethodInvoker)(() => mainform.Map_Packet(GetMessage, last_map_id, UserCode)));
                         }
 
+                        // 공격 이펙트
+                        else if (GetMessage.Contains("<attack_effect>"))
+                        {
+                            string data = system_db.splitTag("attack_effect", GetMessage);
+                            string[] co1 = { "," };
+                            String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
+
+                            string target = data2[0];
+                            
+                            if (mainform.UserByNameDict.ContainsKey(target))
+                            {
+                                mainform.UserByNameDict[target].SW.WriteLine("<attack_effect>" + UserCode + "</attack_effect>");
+                                mainform.UserByNameDict[target].SW.Flush();
+                            }
+                            SW.Flush();
+                        }
+
+                        // 스킬 이펙트
+                        else if (GetMessage.Contains("<skill_effect>"))
+                        {
+                            string data = system_db.splitTag("skill_effect", GetMessage);
+                            string[] co1 = { "," };
+                            String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
+
+                            string target = data2[0];
+                            string skill_id = data2[1];
+
+                            if (mainform.UserByNameDict.ContainsKey(target))
+                            {
+                                mainform.UserByNameDict[target].SW.WriteLine("<skill_effect>" + UserCode + "," + skill_id + "</skill_effect>");
+                                mainform.UserByNameDict[target].SW.Flush();
+                            }
+                            SW.Flush();
+                        }
+
+                        // 스킬 이펙트
+                        else if (GetMessage.Contains("<e_skill_effect>"))
+                        {
+                            string data = system_db.splitTag("e_skill_effect", GetMessage);
+                            string[] co1 = { "," };
+                            String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
+
+                            string target = data2[0];
+                            string enemy_id = data2[1];
+                            string skill_id = data2[2];
+
+                            if (mainform.UserByNameDict.ContainsKey(target))
+                            {
+                                mainform.UserByNameDict[target].SW.WriteLine("<e_skill_effect>" + enemy_id + "," + skill_id + "</e_skill_effect>");
+                                mainform.UserByNameDict[target].SW.Flush();
+                            }
+                            SW.Flush();
+                        }
+
+
                         // DB에 아이템 데이터 저장
                         else if (GetMessage.Contains("<Drop>"))
                         {
@@ -432,28 +487,12 @@ namespace SupremePlayServer
                         // 유저 종료
                         else if (GetMessage.Contains("<9>"))
                         {
+                            SW.Close();
+                            SR.Close();
+                            client.Close();
+                            NS.Close();
+                            UserCode = "*null*";
                             mainform.removethread(this);
-                            if (!UserCode.Equals("*null*") && system_db.splitTag("9", GetMessage).Equals(UserCode))
-                            {
-                                if (UserName != null)
-                                {
-                                    mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage)));
-                                    SW.Close();
-                                    SR.Close();
-                                    client.Close();
-                                    NS.Close();
-                                    mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage)));
-                                }
-                                else
-                                {
-                                    SW.Close();
-                                    SR.Close();
-                                    client.Close();
-                                    NS.Close();
-                                    return;
-                                }
-                                UserCode = "*null*";
-                            }
                         }
 
                         else if (GetMessage.Contains("<party_switch>"))
@@ -561,17 +600,26 @@ namespace SupremePlayServer
                     {
                         //mainform.write_log(e.ToString());
                         //MessageBox.Show(e.ToString());
-                        if (!client.Connected)
+                        if (client.Connected)
                         {
                             SW.Close();
                             SR.Close();
                             client.Close();
                             NS.Close();
+                            this.thread.Abort();
                             mainform.removethread(this);
                             return;
                         }
                     }
                 }
+                // 연결 종료
+                SW.Close();
+                SR.Close();
+                client.Close();
+                NS.Close();
+                this.thread.Abort();
+                mainform.removethread(this);
+                return;
             }
         }
 

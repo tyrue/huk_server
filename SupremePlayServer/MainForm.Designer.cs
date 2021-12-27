@@ -55,25 +55,25 @@
             this.tableLayoutPanel8 = new System.Windows.Forms.TableLayoutPanel();
             this.drop_event_num = new System.Windows.Forms.TextBox();
             this.label6 = new System.Windows.Forms.Label();
+            this.tableLayoutPanel3 = new System.Windows.Forms.TableLayoutPanel();
+            this.ship_target_name = new System.Windows.Forms.Label();
+            this.ship_target = new System.Windows.Forms.Label();
             this.button1 = new System.Windows.Forms.Button();
             this.tableLayoutPanel5 = new System.Windows.Forms.TableLayoutPanel();
             this.tableLayoutPanel10 = new System.Windows.Forms.TableLayoutPanel();
             this.tableLayoutPanel2 = new System.Windows.Forms.TableLayoutPanel();
             this.tableLayoutPanel7 = new System.Windows.Forms.TableLayoutPanel();
-            this.tableLayoutPanel3 = new System.Windows.Forms.TableLayoutPanel();
-            this.ship_target = new System.Windows.Forms.Label();
-            this.ship_target_name = new System.Windows.Forms.Label();
             this.statusStrip1.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
             this.tableLayoutPanel6.SuspendLayout();
             this.tableLayoutPanel4.SuspendLayout();
             this.tableLayoutPanel11.SuspendLayout();
             this.tableLayoutPanel8.SuspendLayout();
+            this.tableLayoutPanel3.SuspendLayout();
             this.tableLayoutPanel5.SuspendLayout();
             this.tableLayoutPanel10.SuspendLayout();
             this.tableLayoutPanel2.SuspendLayout();
             this.tableLayoutPanel7.SuspendLayout();
-            this.tableLayoutPanel3.SuspendLayout();
             this.SuspendLayout();
             // 
             // statusStrip1
@@ -400,6 +400,42 @@
             this.label6.Text = "드랍율 이벤트";
             this.label6.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
+            // tableLayoutPanel3
+            // 
+            this.tableLayoutPanel3.ColumnCount = 2;
+            this.tableLayoutPanel3.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableLayoutPanel3.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 70F));
+            this.tableLayoutPanel3.Controls.Add(this.ship_target_name, 0, 0);
+            this.tableLayoutPanel3.Controls.Add(this.ship_target, 0, 0);
+            this.tableLayoutPanel3.Location = new System.Drawing.Point(3, 183);
+            this.tableLayoutPanel3.Name = "tableLayoutPanel3";
+            this.tableLayoutPanel3.RowCount = 1;
+            this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableLayoutPanel3.Size = new System.Drawing.Size(143, 21);
+            this.tableLayoutPanel3.TabIndex = 38;
+            // 
+            // ship_target_name
+            // 
+            this.ship_target_name.AutoSize = true;
+            this.ship_target_name.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.ship_target_name.Location = new System.Drawing.Point(76, 0);
+            this.ship_target_name.Name = "ship_target_name";
+            this.ship_target_name.Size = new System.Drawing.Size(64, 21);
+            this.ship_target_name.TabIndex = 36;
+            this.ship_target_name.Text = "목적지";
+            this.ship_target_name.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // ship_target
+            // 
+            this.ship_target.AutoSize = true;
+            this.ship_target.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.ship_target.Location = new System.Drawing.Point(3, 0);
+            this.ship_target.Name = "ship_target";
+            this.ship_target.Size = new System.Drawing.Size(67, 21);
+            this.ship_target.TabIndex = 35;
+            this.ship_target.Text = "배 목적지 :";
+            this.ship_target.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
             // button1
             // 
             this.button1.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -478,42 +514,6 @@
             this.tableLayoutPanel7.Size = new System.Drawing.Size(254, 31);
             this.tableLayoutPanel7.TabIndex = 36;
             // 
-            // tableLayoutPanel3
-            // 
-            this.tableLayoutPanel3.ColumnCount = 2;
-            this.tableLayoutPanel3.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tableLayoutPanel3.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 70F));
-            this.tableLayoutPanel3.Controls.Add(this.ship_target_name, 0, 0);
-            this.tableLayoutPanel3.Controls.Add(this.ship_target, 0, 0);
-            this.tableLayoutPanel3.Location = new System.Drawing.Point(3, 183);
-            this.tableLayoutPanel3.Name = "tableLayoutPanel3";
-            this.tableLayoutPanel3.RowCount = 1;
-            this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tableLayoutPanel3.Size = new System.Drawing.Size(143, 21);
-            this.tableLayoutPanel3.TabIndex = 38;
-            // 
-            // ship_target
-            // 
-            this.ship_target.AutoSize = true;
-            this.ship_target.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.ship_target.Location = new System.Drawing.Point(3, 0);
-            this.ship_target.Name = "ship_target";
-            this.ship_target.Size = new System.Drawing.Size(67, 21);
-            this.ship_target.TabIndex = 35;
-            this.ship_target.Text = "배 목적지 :";
-            this.ship_target.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
-            // ship_target_name
-            // 
-            this.ship_target_name.AutoSize = true;
-            this.ship_target_name.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.ship_target_name.Location = new System.Drawing.Point(76, 0);
-            this.ship_target_name.Name = "ship_target_name";
-            this.ship_target_name.Size = new System.Drawing.Size(64, 21);
-            this.ship_target_name.TabIndex = 36;
-            this.ship_target_name.Text = "목적지";
-            this.ship_target_name.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
             // MainForm
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Inherit;
@@ -542,14 +542,14 @@
             this.tableLayoutPanel11.ResumeLayout(false);
             this.tableLayoutPanel8.ResumeLayout(false);
             this.tableLayoutPanel8.PerformLayout();
+            this.tableLayoutPanel3.ResumeLayout(false);
+            this.tableLayoutPanel3.PerformLayout();
             this.tableLayoutPanel5.ResumeLayout(false);
             this.tableLayoutPanel10.ResumeLayout(false);
             this.tableLayoutPanel2.ResumeLayout(false);
             this.tableLayoutPanel2.PerformLayout();
             this.tableLayoutPanel7.ResumeLayout(false);
             this.tableLayoutPanel7.PerformLayout();
-            this.tableLayoutPanel3.ResumeLayout(false);
-            this.tableLayoutPanel3.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 

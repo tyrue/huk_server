@@ -46,13 +46,13 @@ namespace SupremePlayServer
 
             // 랜덤 메시지용 타이머
             System.Windows.Forms.Timer timer3 = new System.Windows.Forms.Timer();
-            timer3.Interval = 1000 * 180; 
+            timer3.Interval = 1000 * 60 * 5; 
             timer3.Tick += new EventHandler(random_server_msg);
             timer3.Start();
 
             // 배 목적지 타이머
             System.Windows.Forms.Timer timer4 = new System.Windows.Forms.Timer();
-            timer4.Interval = 1000 * 60 * 20;
+            timer4.Interval = 1000 * 60 * 1;
             timer4.Tick += new EventHandler(change_ship_target);
             timer4.Start();
 
@@ -348,16 +348,14 @@ namespace SupremePlayServer
                     int map_i = userthread.last_map_id;
                     removeMapUser(map_i, userthread);
                     UserList.Remove(userthread);
-                    if(!userthread.UserName.Equals(string.Empty))
-                        UserByNameDict.Remove(userthread.UserName);
                     PlayerCount();
-                    if (userthread.UserName != null)
+                    if (!string.IsNullOrEmpty(userthread.UserName))
                     {
+                        UserByNameDict.Remove(userthread.UserName);
                         write_log(userthread.UserName + " 종료");
                         Packet("<chat1>(알림): '" + userthread.UserName + "'님께서 종료하셨습니다.</chat1>");
                         Packet("<9>" + userthread.UserCode + "</9>");
                     }
-                    userthread.thread.Abort();
                 }
             }
             catch (Exception e)
