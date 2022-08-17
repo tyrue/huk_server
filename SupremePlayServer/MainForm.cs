@@ -22,6 +22,9 @@ namespace SupremePlayServer
         public double drop_event = 0;
         public int max_user_name = 10; // 전체 인원 제한
         public string version = Properties.Resources.VERSION;
+
+        public List<string> settingList;
+
         Random random;
         List<string> print_chat_tag; // 서버에 남길 채팅 내용 태그
 
@@ -60,7 +63,13 @@ namespace SupremePlayServer
             write_log("------------------------------");
             write_log("서버 시작");
             write_log("몬스터 데이터 삭제");
-            now_ship_target();
+            now_ship_target(); // 선착장 확인
+
+            // 기본 셋팅
+            drop_event_num.Text = "0";
+            exp_event_num.Text = "0";
+
+            // 버전 확인
             try
             {
                 string dir = "./";
@@ -70,14 +79,60 @@ namespace SupremePlayServer
                     using (StreamWriter verFile = new StreamWriter(@dir + "version.txt", true))
                     {
                         verFile.WriteLine(version);
+                        verFile.Close();
                     }
                 }
+
                 using (StreamReader verFile = new StreamReader(@dir + "version.txt", true))
                 {
                     version = verFile.ReadLine();
-                    Console.WriteLine(version);
+                    verFile.Close();
                 }
                 write_log("현재 버전 : " + version);
+            }
+            catch (Exception e)
+            {
+                write_log(e.ToString());
+            }
+
+            // 서버 켜기전 셋팅 값 불러오기
+            try
+            {
+                string dir = "./";
+                FileInfo fileInfo = new FileInfo(dir + "setting.dat");
+                if (!fileInfo.Exists) // 파일이 존재 안한다면
+                {
+                    using (StreamWriter setFile = new StreamWriter(@dir + "setting.dat", true))
+                    {
+                        setFile.WriteLine(Properties.Resources.DROP_SET_NAME + " " + drop_event_num.Text);
+                        setFile.WriteLine(Properties.Resources.EXE_SET_NAME + " " + exp_event_num.Text);
+                        setFile.Close();
+                    }
+                }
+
+                using (StreamReader setFile = new StreamReader(@dir + "setting.dat", true))
+                {
+                    string line = "";
+                    while ((line = setFile.ReadLine()) != null)
+                    {
+                        string[] data = line.Split(' ');
+                        string setName = data[0];
+                        string val = data[1];
+
+                        if (setName.Equals(Properties.Resources.EXE_SET_NAME))
+                        {
+                            exp_event_num.Text = val;
+                        }
+
+                        else if (setName.Equals(Properties.Resources.DROP_SET_NAME))
+                        {
+                            drop_event_num.Text = val;
+                        }
+
+                        write_log(setName + " : " + val);
+                    }
+                    setFile.Close();
+                }
             }
             catch (Exception e)
             {
@@ -354,8 +409,8 @@ namespace SupremePlayServer
                         UserByNameDict.Remove(userthread.UserName);
                         write_log(userthread.UserName + " 종료");
                         Packet("<chat1>(알림): '" + userthread.UserName + "'님께서 종료하셨습니다.</chat1>");
-                        Packet("<9>" + userthread.UserCode + "</9>");
                     }
+                    Packet("<9>" + userthread.UserCode + "</9>");
                 }
             }
             catch (Exception e)
@@ -507,6 +562,42 @@ namespace SupremePlayServer
 
                     int visibleItems = listBox2.ClientSize.Height / listBox2.ItemHeight;
                     listBox2.TopIndex = Math.Max(listBox2.Items.Count - visibleItems + 1, 0);
+
+                    string dir = "./";
+                    try
+                    {
+                        int offset = 0;
+                        string buf = "";
+                        using (StreamReader setFile = new StreamReader(@dir + "setting.dat", true))
+                        {
+                            buf = setFile.ReadToEnd();
+                            setFile.BaseStream.Position = 0;
+
+                            string line = "";
+                            while ((line = setFile.ReadLine()) != null)
+                            {
+                                if (line.Contains(Properties.Resources.EXE_SET_NAME))
+                                {
+                                    offset = buf.IndexOf(line, 0);
+                                    buf = buf.Remove(offset, line.Length);
+                                    string replaceTxt = Properties.Resources.EXE_SET_NAME + " " + exe_event;
+                                    buf = buf.Insert(offset, replaceTxt);
+                                    break;
+                                }
+                            }
+                            setFile.Close();
+                        }
+
+                        using (StreamWriter setFile = new StreamWriter(@dir + "setting.dat", false))
+                        {
+                            setFile.Write(buf);
+                            setFile.Close();
+                        }
+                    }
+                    catch (Exception exc)
+                    {
+                        write_log(exc.ToString());
+                    }
                 }
             }
         }
@@ -524,6 +615,42 @@ namespace SupremePlayServer
 
                     int visibleItems = listBox2.ClientSize.Height / listBox2.ItemHeight;
                     listBox2.TopIndex = Math.Max(listBox2.Items.Count - visibleItems + 1, 0);
+
+                    string dir = "./";
+                    try
+                    {
+                        int offset = 0;
+                        string buf = "";
+                        using (StreamReader setFile = new StreamReader(@dir + "setting.dat", true))
+                        {
+                            buf = setFile.ReadToEnd();
+                            setFile.BaseStream.Position = 0;
+
+                            string line = "";
+                            while ((line = setFile.ReadLine()) != null)
+                            {
+                                if (line.Contains(Properties.Resources.DROP_SET_NAME))
+                                {
+                                    offset = buf.IndexOf(line, 0);
+                                    buf = buf.Remove(offset, line.Length);
+                                    string replaceTxt = Properties.Resources.DROP_SET_NAME + " " + drop_event;
+                                    buf = buf.Insert(offset, replaceTxt);
+                                    break;
+                                }
+                            }
+                            setFile.Close();
+                        }
+
+                        using (StreamWriter setFile = new StreamWriter(@dir + "setting.dat", false))
+                        {
+                            setFile.Write(buf);
+                            setFile.Close();
+                        }
+                    }
+                    catch (Exception exc)
+                    {
+                        write_log(exc.ToString());
+                    }
                 }
             }
         }

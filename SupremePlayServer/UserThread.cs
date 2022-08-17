@@ -50,6 +50,17 @@ namespace SupremePlayServer
             "<del_item",
             "<drop_create",
             "<userdata",
+            "<Drop",
+            "<show_range_skill",
+            "<monster_sp",
+            "<Drop_Get",
+            "<27",
+            "<nptgain",
+            "<partyhill",
+            "<npt_move",
+            "<attack_effect",
+            "<skill_effect",
+            "<monster_chat",
         };
 
         string[] map_message =
@@ -139,7 +150,8 @@ namespace SupremePlayServer
                     try
                     {
                         GetMessage = SR.ReadLine();
-                        if (GetMessage == null) continue;
+                        if (string.IsNullOrEmpty(GetMessage)) continue;
+                        
                         // Log
                         /*
                         if (mainform != null)
@@ -147,14 +159,13 @@ namespace SupremePlayServer
                          * */
                         //MessageBox.Show(GetMessage);
                         // Authorization 인증
-                        if (UserName != "" || UserName != null || UserName.Length != 0)
+                        if (!string.IsNullOrEmpty(UserName))
                         {
                             string[] co1 = { ">" };
                             String[] d1 = GetMessage.Split(co1, StringSplitOptions.RemoveEmptyEntries);
                             if (!ignore_ms.Contains(d1[0]))
                                 mainform.write_log_user(UserName, GetMessage);
                         }
-
 
                         if (GetMessage.Contains("<0>"))
                         {
@@ -348,6 +359,8 @@ namespace SupremePlayServer
                             {
                                 string s = d.map_id + "," + d.id + "," + d.hp + "," + d.x + "," + d.y + "," + d.direction + "," + d.respawn;
                                 SW.WriteLine("<req_monster>" + s + "</req_monster>");
+                                SW.Flush();
+                                SW.WriteLine("<monster_sp>" + d.id + "," + d.sp + "</monster_sp>");
                             }
                             SW.Flush();
                         }
@@ -363,8 +376,11 @@ namespace SupremePlayServer
                             int id = int.Parse(data2[0]);
                             int sp = int.Parse(data2[1]);
 
-                            sd.monster_data[last_map_id][id].sp = sp;
-                            mainform.Invoke((MethodInvoker)(() => mainform.Map_Packet(GetMessage, last_map_id, UserCode)));
+                            if (sd.monster_data[last_map_id].ContainsKey(id))
+                            {
+                                sd.monster_data[last_map_id][id].sp = sp;
+                                mainform.Invoke((MethodInvoker)(() => mainform.Map_Packet(GetMessage, last_map_id, UserCode)));
+                            }
                         }
 
                         // 공격 이펙트
@@ -375,7 +391,7 @@ namespace SupremePlayServer
                             String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
 
                             string target = data2[0];
-                            
+
                             if (mainform.UserByNameDict.ContainsKey(target))
                             {
                                 mainform.UserByNameDict[target].SW.WriteLine("<attack_effect>" + UserCode + "</attack_effect>");
@@ -513,7 +529,7 @@ namespace SupremePlayServer
                                 try
                                 {
                                     int[] check = mainform.sd.checkPartyQuest(map_id);
-                                    if(check[0] != 0)
+                                    if (check[0] != 0)
                                     {
                                         SW.WriteLine("<party_quest_check>" + check[0].ToString() + "," + check[1].ToString() + "</party_quest_check>");
                                         SW.Flush();
@@ -530,7 +546,7 @@ namespace SupremePlayServer
                         {
                             try
                             {
-                                SW.WriteLine("<ship_time_check>" + mainform.now_ship_target() +"</ship_time_check>");
+                                SW.WriteLine("<ship_time_check>" + mainform.now_ship_target() + "</ship_time_check>");
                                 SW.Flush();
                             }
                             catch (Exception e)
@@ -565,7 +581,7 @@ namespace SupremePlayServer
                             string target = data2[0];
                             string msg = data2[1];
 
-                            if(!mainform.UserByNameDict.ContainsKey(target))
+                            if (!mainform.UserByNameDict.ContainsKey(target))
                             {
                                 SW.WriteLine("<whispers>귓속말 할 상대가 없습니다.</whispers>");
                             }
@@ -580,7 +596,7 @@ namespace SupremePlayServer
                         }
 
                         // 나머지는 다 방송함
-                        else if (!GetMessage.Equals("null"))
+                        else if (!string.IsNullOrEmpty(GetMessage))
                         {
                             string[] co1 = { ">" };
                             String[] d1 = GetMessage.Split(co1, StringSplitOptions.RemoveEmptyEntries);
@@ -598,15 +614,14 @@ namespace SupremePlayServer
                     }
                     catch (Exception e)
                     {
-                        //mainform.write_log(e.ToString());
                         //MessageBox.Show(e.ToString());
                         if (client.Connected)
                         {
+                            mainform.write_log(e.ToString());
                             SW.Close();
                             SR.Close();
                             client.Close();
                             NS.Close();
-                            this.thread.Abort();
                             mainform.removethread(this);
                             return;
                         }
@@ -617,7 +632,6 @@ namespace SupremePlayServer
                 SR.Close();
                 client.Close();
                 NS.Close();
-                this.thread.Abort();
                 mainform.removethread(this);
                 return;
             }
