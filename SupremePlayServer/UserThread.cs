@@ -507,8 +507,8 @@ namespace SupremePlayServer
                             SR.Close();
                             client.Close();
                             NS.Close();
-                            UserCode = "*null*";
                             mainform.removethread(this);
+                            UserCode = "*null*";
                         }
 
                         else if (GetMessage.Contains("<party_switch>"))
