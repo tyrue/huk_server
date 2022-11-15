@@ -349,15 +349,26 @@ namespace SupremePlayServer
                             sd.SaveMonster(splitTag("monster", GetMessage));
                         }
 
+                        else if (GetMessage.Contains("<monster2>"))
+                        {
+                            sd.SaveMonster2(splitTag("monster2", GetMessage));
+                            mainform.Invoke((MethodInvoker)(() => mainform.Map_Packet(GetMessage, last_map_id, UserCode)));
+                        }
+
                         // 몬스터 데이터 로드
                         else if (GetMessage.Contains("<req_monster>"))
                         {
                             //MessageBox.Show("몬스터 정보 요청");
-                            if (!sd.monster_data.ContainsKey(last_map_id)) continue;
+                            if (!sd.monster_data.ContainsKey(last_map_id))
+                            {
+                                SW.WriteLine("<req_monster>" + last_map_id + "</req_monster>");
+                                SW.Flush();
+                                continue;
+                            }
                             var da = sd.monster_data[last_map_id].Values;
                             foreach (var d in da)
                             {
-                                string s = d.map_id + "," + d.id + "," + d.hp + "," + d.x + "," + d.y + "," + d.direction + "," + d.respawn;
+                                string s = d.map_id + "," + d.id + "," + d.hp + "," + d.x + "," + d.y + "," + d.direction + "," + d.respawn + "," + d.mon_id;
                                 SW.WriteLine("<req_monster>" + s + "</req_monster>");
                                 SW.Flush();
                                 SW.WriteLine("<monster_sp>" + d.id + "," + d.sp + "</monster_sp>");
@@ -462,6 +473,24 @@ namespace SupremePlayServer
                                 SW.WriteLine("<Drop>" + d.d_id + "," + d.type2 + "," + d.type1 + "," + d.id + "," + d.map_id + "," + d.x + "," + d.y + "," + d.num + "</Drop>");
                             }
 
+                            SW.Flush();
+                        }
+
+                        else if (GetMessage.Contains("<item_summon>"))
+                        {
+                            string data = system_db.splitTag("item_summon", GetMessage);
+                            string[] co1 = { "," };
+                            String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
+
+                            string target = data2[0];
+                            string x = data2[1];
+                            string y = data2[2];
+
+                            if (mainform.UserByNameDict.ContainsKey(target))
+                            {
+                                mainform.UserByNameDict[target].SW.WriteLine("<item_summon>" + x + "," + y + "</item_summon>");
+                                mainform.UserByNameDict[target].SW.Flush();
+                            }
                             SW.Flush();
                         }
 

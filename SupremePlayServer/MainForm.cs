@@ -122,11 +122,13 @@ namespace SupremePlayServer
                         if (setName.Equals(Properties.Resources.EXE_SET_NAME))
                         {
                             exp_event_num.Text = val;
+                            int.TryParse(val, out exe_event);
                         }
 
                         else if (setName.Equals(Properties.Resources.DROP_SET_NAME))
                         {
                             drop_event_num.Text = val;
+                            double.TryParse(val, out drop_event);
                         }
 
                         write_log(setName + " : " + val);

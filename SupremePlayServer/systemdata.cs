@@ -135,7 +135,6 @@ namespace SupremePlayServer
             try
             {
                 string[] d = data.Split(',');
-                bool sw = false;
                 int map_id = int.Parse(d[0]);
                 int id = int.Parse(d[1]);
 
@@ -165,6 +164,53 @@ namespace SupremePlayServer
                     m.direction = int.Parse(d[5]);
                     m.respawn = int.Parse(d[6]);
                     m.dead = m.hp <= 0 ? true : false;
+                    monster_data[map_id][id] = m;
+                }
+            }
+            catch (Exception e)
+            {
+                mainForm.write_log(e.ToString());
+            }
+        }
+
+        public void SaveMonster2(string data)
+        {
+            try
+            {
+                string[] d = data.Split(',');
+                int map_id = int.Parse(d[0]);
+                int id = int.Parse(d[1]);
+                int mon_id = int.Parse(d[2]);
+                int x = 0;
+                int y = 0;
+
+                if(d.Length > 3)
+                {
+                    x = int.Parse(d[3]);
+                    y = int.Parse(d[4]);
+                }
+
+                if (!monster_data.ContainsKey(map_id))
+                {
+                    monster_data[map_id] = new Dictionary<int, Monster>();
+                }
+
+                if (monster_data[map_id].ContainsKey(id))
+                {
+                    var temp = monster_data[map_id][id];
+                    temp.mon_id = mon_id;
+                    if (x != 0) temp.x = x;
+                    if (y != 0) temp.y = y;
+                }
+                else
+                {
+                    Monster m = new Monster();
+                    m.map_id = map_id;
+                    m.id = id;
+                    m.mon_id = mon_id;
+                    if (x != 0) m.x = x;
+                    if (y != 0) m.y = y;
+
                     monster_data[map_id][id] = m;
                 }
             }

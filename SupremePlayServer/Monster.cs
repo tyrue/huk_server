@@ -17,6 +17,7 @@ namespace SupremePlayServer
         public int direction;
         public int respawn;
         public bool dead;
+        public int mon_id;
 
         public Monster()
         {
