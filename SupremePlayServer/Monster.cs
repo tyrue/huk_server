@@ -18,6 +18,7 @@ namespace SupremePlayServer
         public int respawn;
         public bool dead;
         public int mon_id;
+        public bool delete_sw;
 
         public Monster()
         {
@@ -30,6 +31,7 @@ namespace SupremePlayServer
             direction = 0;
             respawn = 0;
             dead = false;
+            delete_sw = false;
         }
     }
 }

@@ -37,6 +37,7 @@ namespace SupremePlayServer
         // 타이머 생성 및 시작
         System.Timers.Timer timer2;
 
+        // 서버 로그에 저장하지 않는 태그
         string[] ignore_ms =
         {
             "<mon_move",
@@ -352,11 +353,17 @@ namespace SupremePlayServer
                         else if (GetMessage.Contains("<monster2>"))
                         {
                             sd.SaveMonster2(splitTag("monster2", GetMessage));
-                            mainform.Invoke((MethodInvoker)(() => mainform.Map_Packet(GetMessage, last_map_id, UserCode)));
+                            mainform.Invoke((MethodInvoker)(() => mainform.Map_Packet(GetMessage, last_map_id, UserCode))); // 맵에 메시지 전체 전달
+                        }
+
+                        else if (GetMessage.Contains("<enemy_dead>"))
+                        {
+                            sd.DeleteMonster(splitTag("enemy_dead", GetMessage));
+                            mainform.Invoke((MethodInvoker)(() => mainform.Map_Packet(GetMessage, last_map_id, UserCode))); // 맵에 메시지 전체 전달
                         }
 
                         // 몬스터 데이터 로드
-                        else if (GetMessage.Contains("<req_monster>"))
+                                else if (GetMessage.Contains("<req_monster>"))
                         {
                             //MessageBox.Show("몬스터 정보 요청");
                             if (!sd.monster_data.ContainsKey(last_map_id))

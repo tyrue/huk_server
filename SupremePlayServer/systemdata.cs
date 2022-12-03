@@ -183,11 +183,13 @@ namespace SupremePlayServer
                 int mon_id = int.Parse(d[2]);
                 int x = 0;
                 int y = 0;
+                bool sw = false;
 
                 if(d.Length > 3)
                 {
                     x = int.Parse(d[3]);
                     y = int.Parse(d[4]);
+                    if (int.Parse(d[5]) == -1) sw = true;
                 }
 
                 if (!monster_data.ContainsKey(map_id))
@@ -201,6 +203,7 @@ namespace SupremePlayServer
                     temp.mon_id = mon_id;
                     if (x != 0) temp.x = x;
                     if (y != 0) temp.y = y;
+                    temp.delete_sw = sw;
                 }
                 else
                 {
@@ -210,6 +213,7 @@ namespace SupremePlayServer
                     m.mon_id = mon_id;
                     if (x != 0) m.x = x;
                     if (y != 0) m.y = y;
+                    m.delete_sw = sw;
 
                     monster_data[map_id][id] = m;
                 }
@@ -219,6 +223,33 @@ namespace SupremePlayServer
                 mainForm.write_log(e.ToString());
             }
         }
+
+        public void DeleteMonster(string data)
+        {
+            try
+            {
+                // id, 이벤트 id, map id, netparty장 이름
+                string[] d = data.Split(',');
+                int id = int.Parse(d[0]);
+                int map_id = int.Parse(d[1]);
+
+                if (monster_data.ContainsKey(map_id))
+                {
+                    if(monster_data[map_id].ContainsKey(id))
+                    {
+                        if(monster_data[map_id][id].delete_sw)
+                        {
+                            monster_data[map_id].Remove(id);
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                mainForm.write_log(e.ToString());
+            }
+        }
+            
 
         public void SaveItem2(string data)
         {
