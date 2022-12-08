@@ -137,6 +137,9 @@ namespace SupremePlayServer
                 string[] d = data.Split(',');
                 int map_id = int.Parse(d[0]);
                 int id = int.Parse(d[1]);
+                int hp, x, y, direction, respawn;
+                respawn = int.TryParse(d[6], out respawn) ? respawn : -1;
+                
 
                 if (!monster_data.ContainsKey(map_id))
                 {
@@ -146,11 +149,11 @@ namespace SupremePlayServer
                 if (monster_data[map_id].ContainsKey(id))
                 {
                     var temp = monster_data[map_id][id];
-                    temp.hp = int.Parse(d[2]);
-                    temp.x = int.Parse(d[3]);
-                    temp.y = int.Parse(d[4]);
-                    temp.direction = int.Parse(d[5]);
-                    temp.respawn = int.Parse(d[6]);
+                    if (int.TryParse(d[2], out hp)) temp.hp = hp;
+                    if (int.TryParse(d[3], out x)) temp.x = x;
+                    if (int.TryParse(d[4], out y)) temp.y = y;
+                    if (int.TryParse(d[5], out direction)) temp.direction = direction;
+                    if (int.TryParse(d[6], out respawn)) temp.respawn = respawn;
                     temp.dead = temp.hp <= 0 ? true : false;
                 }
                 else
@@ -158,11 +161,11 @@ namespace SupremePlayServer
                     Monster m = new Monster();
                     m.map_id = map_id;
                     m.id = id;
-                    m.hp = int.Parse(d[2]);
-                    m.x = int.Parse(d[3]);
-                    m.y = int.Parse(d[4]);
-                    m.direction = int.Parse(d[5]);
-                    m.respawn = int.Parse(d[6]);
+                    if (int.TryParse(d[2], out hp)) m.hp = hp;
+                    if (int.TryParse(d[3], out x)) m.x = x;
+                    if (int.TryParse(d[4], out y)) m.y = y;
+                    if (int.TryParse(d[5], out direction)) m.direction = direction;
+                    if (int.TryParse(d[6], out respawn)) m.respawn = respawn;
                     m.dead = m.hp <= 0 ? true : false;
                     monster_data[map_id][id] = m;
                 }
