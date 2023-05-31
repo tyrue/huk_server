@@ -4,13 +4,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
 using System.Text;
+using System.Windows.Forms;
 
 namespace SupremePlayServer
 {
     public class System_DB : UserThread
     {
         private string DBInfo =
-            //"Server=db-hukgame.cljwz9dsddot.ap-northeast-2.rds.amazonaws.com;" + // aws 외부 접속 db 주소
+            //"Server=database-1.cgf7pnamht0f.ap-northeast-2.rds.amazonaws.com;" + // aws 외부 접속 db 주소
             "Server=127.0.0.1;" +
             "Database=supremeplay;" +
             "Uid=root;" +
