@@ -11,12 +11,14 @@ namespace SupremePlayServer
     public class System_DB : UserThread
     {
         private string DBInfo =
-            //"Server=database-1.cgf7pnamht0f.ap-northeast-2.rds.amazonaws.com;" + // aws 외부 접속 db 주소
+
             "Server=127.0.0.1;" +
-            "Database=supremeplay;" +
+            // aws 외부 접속 db 주소
+            //"Server=database-2.cgf7pnamht0f.ap-northeast-2.rds.amazonaws.com;" + 
             "Uid=root;" +
+            "Database=supremeplay;" +
             "Pwd=abs753951;" +
-            "CharSet=utf8";
+            "CharSet=utf8;";
 
 
         #region 회원가입
@@ -300,6 +302,7 @@ namespace SupremePlayServer
                 Dictionary<int, string> data = new Dictionary<int, string>();
                 using (MySqlConnection conn = new MySqlConnection(DBInfo))
                 {
+                    
                     // DB Connection
                     conn.Open();
 

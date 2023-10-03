@@ -26,7 +26,6 @@ namespace SupremePlayServer
 
         // Get Packet List
         Systemdata sd;
-        List<String> plist;
         public Thread thread = null;
 
         public int last_map_id = 0;
@@ -37,63 +36,11 @@ namespace SupremePlayServer
         // 타이머 생성 및 시작
         System.Timers.Timer timer2;
 
-        // 서버 로그에 저장하지 않는 태그
-        string[] ignore_ms =
-        {
-            "<mon_move",
-            "<aggro",
-            "<mon_damage",
-            "<player_damage",
-            "<enemy_dead",
-            "<monster",
-            "<hp",
-            "<drop_del",
-            "<del_item",
-            "<drop_create",
-            "<userdata",
-            "<Drop",
-            "<show_range_skill",
-            "<monster_sp",
-            "<Drop_Get",
-            "<27",
-            "<nptgain",
-            "<partyhill",
-            "<npt_move",
-            "<attack_effect",
-            "<skill_effect",
-            "<monster_chat",
-        };
-
-        string[] map_message =
-        {
-            "<mon_move",
-            "<aggro",
-            "<mon_damage",
-            "<player_damage",
-            "<enemy_dead",
-            "<nptgain",
-            "<partyhill",
-            "<npt_move",
-            "<map_chat",
-            "<27", // 애니메이션 재생
-            "<show_range_skill",
-            "<hp",
-            "<monster",
-            "<drop_del",
-            "<del_item",
-            "<drop_create",
-            "<attack_effect",
-            "<skill_effect",
-            "<monster_chat",
-        };
-
         public void startClient(TcpClient clientSocket)
         {
             sd = mainform.sd;
             system_db = mainform.system_db;
-            // Get Packet List
-            plist = sd.getAllpacketList();
-
+            
             // Get UserCode Randomly
             Random random = new Random();
             int randval = random.Next(0, 9999999);
@@ -152,7 +99,6 @@ namespace SupremePlayServer
                     {
                         GetMessage = SR.ReadLine();
                         if (string.IsNullOrEmpty(GetMessage)) continue;
-                        
                         // Log
                         /*
                         if (mainform != null)
@@ -164,8 +110,9 @@ namespace SupremePlayServer
                         {
                             string[] co1 = { ">" };
                             String[] d1 = GetMessage.Split(co1, StringSplitOptions.RemoveEmptyEntries);
-                            if (!ignore_ms.Contains(d1[0]))
-                                mainform.write_log_user(UserName, GetMessage);
+                            string tag = d1[0] + ">";
+
+                            if(!sd.ignoreMessageDict.ContainsKey(tag)) mainform.write_log_user(UserName, GetMessage);
                         }
 
                         if (GetMessage.Contains("<0>"))
@@ -206,7 +153,7 @@ namespace SupremePlayServer
                             {
                                 if (mainform.UserList.Count > mainform.max_user_name)
                                 {
-                                    SW.WriteLine("<sever_msg>서버 유저 수 제한입니다. 다음에 시도해주세요.</sever_msg>"); // 메시지 보내기
+                                    SW.WriteLine("<server_msg>서버 유저 수 제한입니다. 다음에 시도해주세요.</sever_msg>"); // 메시지 보내기
                                     SW.Flush();
                                     continue;
                                 }
@@ -217,7 +164,7 @@ namespace SupremePlayServer
                                 UserName = words[0];
                                 UserId = words[1];
                                 mainform.UserByNameDict.Add(UserName, this);
-                                SW.WriteLine("<sever_msg>흑부엉의 바람의나라에 오신것을 환영합니다.</sever_msg>");
+                                SW.WriteLine("<server_msg>흑부엉의 바람의나라에 오신것을 환영합니다.</server_msg>");
                             }
 
                             // 이미 접속중
@@ -391,9 +338,12 @@ namespace SupremePlayServer
                             string[] co1 = { "," };
                             String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
 
-                            int id = int.Parse(data2[0]);
-                            int sp = int.Parse(data2[1]);
+                            int id = 0;
+                            int sp = 0;
 
+                            if (!int.TryParse(data2[0], out id)) continue;
+                            if (int.TryParse(data2[1], out sp)) continue;
+                            
                             if (sd.monster_data[last_map_id].ContainsKey(id))
                             {
                                 sd.monster_data[last_map_id][id].sp = sp;
@@ -636,15 +586,15 @@ namespace SupremePlayServer
                         {
                             string[] co1 = { ">" };
                             String[] d1 = GetMessage.Split(co1, StringSplitOptions.RemoveEmptyEntries);
+                            String tag = d1[0] + ">";
 
-                            if (plist.IndexOf(d1[0] + ">") != -1)
+                            if (sd.packetMessageDict.ContainsKey(tag))
                             {
-                                if (map_message.Contains(d1[0]))
-                                {
-                                    mainform.Invoke((MethodInvoker)(() => mainform.Map_Packet(GetMessage, last_map_id, UserCode)));
-                                }
-                                else
-                                    mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage, UserCode)));
+                                mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage, UserCode)));
+                            }
+                            else if (sd.mapPacketMessageDict.ContainsKey(tag))
+                            {
+                                mainform.Invoke((MethodInvoker)(() => mainform.Map_Packet(GetMessage, last_map_id, UserCode)));
                             }
                         }
                     }

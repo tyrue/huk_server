@@ -28,6 +28,8 @@ namespace SupremePlayServer
         Random random;
         List<string> print_chat_tag; // 서버에 남길 채팅 내용 태그
 
+        private int secTime = 1000;
+        private int randomMsgIdx = -1;
         public MainForm()
         {
             random = new Random();
@@ -43,19 +45,19 @@ namespace SupremePlayServer
 
             // 타이머 생성 및 시작
             System.Windows.Forms.Timer timer2 = new System.Windows.Forms.Timer();
-            timer2.Interval = 1000; // 몹 리젠 시간
+            timer2.Interval = secTime; // 몹 리젠 시간
             timer2.Tick += new EventHandler(timer_tick);
             timer2.Start();
 
             // 랜덤 메시지용 타이머
             System.Windows.Forms.Timer timer3 = new System.Windows.Forms.Timer();
-            timer3.Interval = 1000 * 60 * 5; 
+            timer3.Interval = secTime * 60 * 5; 
             timer3.Tick += new EventHandler(random_server_msg);
             timer3.Start();
 
             // 배 목적지 타이머
             System.Windows.Forms.Timer timer4 = new System.Windows.Forms.Timer();
-            timer4.Interval = 1000 * 60 * 1;
+            timer4.Interval = secTime * 60 * 1;
             timer4.Tick += new EventHandler(change_ship_target);
             timer4.Start();
 
@@ -202,13 +204,18 @@ namespace SupremePlayServer
             }
         }
 
-        void random_server_msg(object sender, EventArgs e) // 리붓용 타이머 이벤트
+        void random_server_msg(object sender, EventArgs e) // 랜덤 도움 메시지
         {
             try
             {
                 if (UserList.Count == 0) return;
                 int i = random.Next(0, sd.random_server_msg.Count);
+                while(i == randomMsgIdx)
+                {
+                    i = random.Next(0, sd.random_server_msg.Count);
+                }
                 string msg = sd.random_server_msg[i];
+                randomMsgIdx = i;
                 Packet("<chat2>[도움]"+ msg + "</chat2>");
             }
             catch
@@ -217,7 +224,7 @@ namespace SupremePlayServer
             }
         }
 
-        void change_ship_target(object sender, EventArgs e) // 리붓용 타이머 이벤트
+        void change_ship_target(object sender, EventArgs e) // 선착장 배 목적지 타이머
         {
             try
             {
