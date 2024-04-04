@@ -14,10 +14,11 @@ namespace SupremePlayServer
 
             "Server=127.0.0.1;" +
             // aws 외부 접속 db 주소
-            //"Server=database-2.cgf7pnamht0f.ap-northeast-2.rds.amazonaws.com;" + 
+            //"Server=database-1.c3c2a4qqcid0.ap-northeast-2.rds.amazonaws.com;" +
+
             "Uid=root;" +
-            "Database=supremeplay;" +
             "Pwd=abs753951;" +
+            "Database=supremeplay;" +
             "CharSet=utf8;";
 
 
@@ -157,99 +158,68 @@ namespace SupremePlayServer
 
 
         #region 유저 데이터 저장
-
-        public void SaveData(String pkdata, String UserId)
+        public void SaveData2(string pkdata, string userId)
         {
-            if (UserId == null) return;
-            pkdata = splitTag("userdata", pkdata);
-
-            string[] co1 = { "|" };
-            String[] data = pkdata.Split(co1, StringSplitOptions.None);
-
-            if (UserId.Equals(""))
-                return;
-
-            String query = "'" + UserId + "', '";
-            String k_name = "";
-            String u_query = "";
-
+            if (string.IsNullOrEmpty(userId)) return;
 
             try
             {
-                for (int i = 1; i < data.Length; i++)
-                {
-                    if (data[i].Equals(""))
-                    {
-                        data[i] = "*null*";
-                    }
+                pkdata = splitTag("userdata", pkdata); // "userdata" 태그 분리
 
-                    query += data[i];
+                Dictionary<string, string> dataDict = ParseKeyValueData(pkdata); // 키:값 형식 데이터 파싱
 
-                    if (i != data.Length - 1)
-                        query += "', '";
-                    else
-                        query += "'";
-                }
+                if (!dataDict.ContainsKey("nickname") || string.IsNullOrEmpty(dataDict["nickname"]))
+                    return;
 
                 using (MySqlConnection conn = new MySqlConnection(DBInfo))
                 {
-                    // DB Connection
                     conn.Open();
 
-                    string sql = "" +
-                        "SELECT* FROM userinfo" +
-                        " WHERE nickname LIKE " + "'" + data[1] + "'";
-                    MySqlCommand cmd = new MySqlCommand(sql, conn);
-                    MySqlDataReader rdr = cmd.ExecuteReader();
+                    // 중복된 닉네임이 있는지 확인
+                    string selectQuery = $"SELECT * FROM userinfo WHERE nickname = '{dataDict["nickname"]}'";
+                    MySqlCommand selectCmd = new MySqlCommand(selectQuery, conn);
+                    MySqlDataReader reader = selectCmd.ExecuteReader();
 
-                    while (rdr.Read())
+                    bool existingRecord = reader.Read();
+                    reader.Close();
+
+                    if (existingRecord) // 이미 존재하는 레코드가 있을 경우
                     {
-                        for (int i = 1; i < rdr.FieldCount; i++)
+                        string updateQuery = "UPDATE userinfo SET ";
+                        List<string> updateValues = new List<string>();
+
+                        
+                        foreach (var pair in dataDict)
                         {
-                            k_name += rdr.GetName(i);
-                            u_query += rdr.GetName(i) + "='" + data[i] + "'";
-                            if (i != rdr.FieldCount - 1)
+                            // 닉네임을 제외한 키:값들로 업데이트 쿼리 생성
+                            if (pair.Key != "nickname")
                             {
-                                k_name += ", ";
-                                u_query += ", ";
+                                updateValues.Add($"{pair.Key} = '{pair.Value}'");
                             }
                         }
-                        break;
+
+                        updateQuery += string.Join(", ", updateValues);
+                        updateQuery += $" WHERE nickname = '{dataDict["nickname"]}'";
+
+                        MySqlCommand updateCmd = new MySqlCommand(updateQuery, conn);
+                        updateCmd.ExecuteNonQuery();
                     }
-
-                    conn.Close();
-                }
-
-                using (MySqlConnection conn = new MySqlConnection(DBInfo))
-                {
-                    // DB Connection
-                    conn.Open();
-                    string sql = "";
-                    if (u_query != "")
+                    else // 존재하지 않는 경우, 새로운 레코드 삽입
                     {
-                        sql = "" +
-                            "UPDATE userinfo" +
-                            " SET " + u_query +
-                            " WHERE nickname LIKE " + "'" + data[1] + "'";
-                    }
-                    else
-                    {
-                        //sql = "INSERT INTO userinfo VALUES(" + query + ") ON DUPLICATE KEY UPDATE id = ''";
-                        sql = "INSERT INTO userinfo VALUES(" + query + ")";
+                        string insertQuery = $"INSERT INTO userinfo ({string.Join(", ", dataDict.Keys)}) " +
+                                             $"VALUES ('{string.Join("', '", dataDict.Values)}')";
+                        MySqlCommand insertCmd = new MySqlCommand(insertQuery, conn);
+                        insertCmd.ExecuteNonQuery();
                     }
 
-                    MySqlCommand cmd = new MySqlCommand(sql, conn);
-                    cmd.ExecuteNonQuery();
                     conn.Close();
                 }
             }
-
             catch (Exception e)
             {
-                mainform.write_log(e.ToString());
+                mainform.write_log(e.ToString()); // 예외 발생 시 로그 출력
             }
         }
-
 
 
         #endregion
@@ -305,6 +275,7 @@ namespace SupremePlayServer
                     
                     // DB Connection
                     conn.Open();
+                    
 
                     string sql = "" +
                         "SELECT* FROM map_name " +
@@ -322,6 +293,10 @@ namespace SupremePlayServer
             }
             catch (Exception e)
             {
+                if(mainform == null)
+                {
+                    MessageBox.Show(e.ToString());
+                }
                 mainform.write_log(e.ToString());
                 return null;
             }

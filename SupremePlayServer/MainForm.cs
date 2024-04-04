@@ -51,7 +51,7 @@ namespace SupremePlayServer
 
             // 랜덤 메시지용 타이머
             System.Windows.Forms.Timer timer3 = new System.Windows.Forms.Timer();
-            timer3.Interval = secTime * 60 * 5; 
+            timer3.Interval = secTime * 60 * 10; 
             timer3.Tick += new EventHandler(random_server_msg);
             timer3.Start();
 

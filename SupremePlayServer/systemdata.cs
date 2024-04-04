@@ -167,8 +167,10 @@ namespace SupremePlayServer
             dict.Add("<se_play>", 0); // 효과음 실행
             dict.Add("<monster_chat>", 0); // 몬스터 말풍선 표시
             dict.Add("<show_range_skill>", 0); // 스킬 
+            dict.Add("<make_range_sprite>", 0); // 범위 스킬 이펙트
         }
 
+        // 로그에 넣지 않을 메시지
         public void makeignoreMessageDict(Dictionary<string, int> dict)
         {
             dict.Add("<mon_move>", 0);

@@ -223,7 +223,7 @@ namespace SupremePlayServer
                         // 유저 데이터 저장
                         else if (GetMessage.Contains("<userdata>"))
                         {
-                            system_db.SaveData(GetMessage, UserId);
+                            system_db.SaveData2(GetMessage, UserId);
 
                             try
                             {
@@ -237,6 +237,19 @@ namespace SupremePlayServer
                             {
                                 mainform.write_log(e.ToString());
                                 //MessageBox.Show();
+                            }
+                        }
+
+                        // 몬스터 데이터 저장
+                        else if (GetMessage.Contains("<mondata>"))
+                        {
+                            try
+                            {
+                                string data = splitTag("mondata", GetMessage);
+                            }
+                            catch (Exception e)
+                            {
+                                mainform.write_log(e.ToString());
                             }
                         }
 
@@ -310,7 +323,7 @@ namespace SupremePlayServer
                         }
 
                         // 몬스터 데이터 로드
-                                else if (GetMessage.Contains("<req_monster>"))
+                         else if (GetMessage.Contains("<req_monster>"))
                         {
                             //MessageBox.Show("몬스터 정보 요청");
                             if (!sd.monster_data.ContainsKey(last_map_id))
@@ -326,6 +339,7 @@ namespace SupremePlayServer
                                 SW.WriteLine("<req_monster>" + s + "</req_monster>");
                                 SW.Flush();
                                 SW.WriteLine("<monster_sp>" + d.id + "," + d.sp + "</monster_sp>");
+                                SW.Flush();
                             }
                             SW.Flush();
                         }
@@ -634,6 +648,25 @@ namespace SupremePlayServer
             return d2[0];
         }
 
+        public static Dictionary<string, string> ParseKeyValueData(string data)
+        {
+            var result = new Dictionary<string, string>();
 
+            // 주어진 문자열을 "|"을 기준으로 분할하여 각 키:값 쌍을 처리합니다.
+            string[] pairs = data.Split('|');
+            foreach (string pair in pairs)
+            {
+                // 각 키:값 쌍을 ":"을 기준으로 분할하여 키와 값을 추출합니다.
+                string[] keyValue = pair.Split(':');
+
+                // 키와 값을 딕셔너리에 추가합니다.
+                if (keyValue.Length == 2)
+                {
+                    result.Add(keyValue[0], keyValue[1]);
+                }
+            }
+
+            return result;
+        }
     }
 }
