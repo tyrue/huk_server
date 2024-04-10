@@ -248,7 +248,7 @@ namespace SupremePlayServer
                     {
                         for (int i = 0; i < rdr.FieldCount; i++)
                         {
-                            SW.WriteLine("<dataload>" + rdr[i].ToString() + "</dataload>");
+                            SW.WriteLine("<dataload>" + rdr.GetName(i) + ":" + rdr[i].ToString() + "</dataload>");
                         }
                         SW.WriteLine("<dataLoadEnd>ok</dataLoadEnd>");
                     }

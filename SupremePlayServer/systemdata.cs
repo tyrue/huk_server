@@ -7,7 +7,7 @@ namespace SupremePlayServer
     public class Systemdata
     {
         public Dictionary<int, Dictionary<int, Monster>> monster_data; // 맵에 존재하는 몬스터의 데이터를 저장
-        public Dictionary<int, List<Item2>> item_data2; // 맵에 존재하는 아이템의 데이터를 저장
+        public Dictionary<int, List<Item>> item_data2; // 맵에 존재하는 아이템의 데이터를 저장
         public Dictionary<int, string> map_data; // 맵의 이름 저장
         public Dictionary<int, int[]> party_quest_map_id;
 
@@ -25,7 +25,7 @@ namespace SupremePlayServer
             {
                 var comparer = StringComparer.OrdinalIgnoreCase;
                 monster_data = new Dictionary<int, Dictionary<int, Monster>>();
-                item_data2 = new Dictionary<int, List<Item2>>();
+                item_data2 = new Dictionary<int, List<Item>>();
                 map_data = new Dictionary<int, string>();
 
                 packetMessageDict = new Dictionary<string, int>(comparer);
@@ -137,8 +137,7 @@ namespace SupremePlayServer
             dict.Add("<enemy_dead>", 0); // 몹 죽음 공유
             dict.Add("<mon_move>", 0); // 몬스터 이동 공유
             dict.Add("<mon_damage>", 0); // 몬스터 데미지 표시
-            dict.Add("<monster>", 0); // 몬스터 정보 공유
-
+            
             // 애니메이션 관련
             dict.Add("<event_animation>", 0);
             dict.Add("<player_animation>", 0);
@@ -201,58 +200,11 @@ namespace SupremePlayServer
         {
             try
             {
-                string[] d = data.Split(',');
-                int map_id = int.Parse(d[0]);
-                int id = int.Parse(d[1]);
-                int hp, x, y, direction, respawn;
-                respawn = int.TryParse(d[6], out respawn) ? respawn : -1;
-                
-                if (!monster_data.ContainsKey(map_id))
-                {
-                    monster_data[map_id] = new Dictionary<int, Monster>();
-                }
+                var d = system_db.ParseKeyValueData(data);
+                int map_id = int.Parse(d["map_id"]);
+                int id = int.Parse(d["id"]);
 
-                if(!monster_data[map_id].ContainsKey(id))
-                {
-                    Monster m = new Monster();
-                    m.map_id = map_id;
-                    m.id = id;
-                    monster_data[map_id][id] = m;
-                }
-
-                var temp = monster_data[map_id][id];
-                if (int.TryParse(d[2], out hp)) temp.hp = hp;
-                if (int.TryParse(d[3], out x)) temp.x = x;
-                if (int.TryParse(d[4], out y)) temp.y = y;
-                if (int.TryParse(d[5], out direction)) temp.direction = direction;
-                if (int.TryParse(d[6], out respawn)) temp.respawn = respawn;
-                temp.dead = temp.hp <= 0 ? true : false;
-            }
-            catch (Exception e)
-            {
-                mainForm.write_log(e.ToString());
-            }
-        }
-
-        public void SaveMonster2(string data)
-        {
-            try
-            {
-                string[] d = data.Split(',');
-                int map_id = int.Parse(d[0]);
-                int id = int.Parse(d[1]);
-                int mon_id = int.Parse(d[2]);
-                int x = 0;
-                int y = 0;
-                bool sw = false;
-
-                if(d.Length > 3)
-                {
-                    x = int.Parse(d[3]);
-                    y = int.Parse(d[4]);
-                    if (int.Parse(d[5]) == -1) sw = true;
-                }
-
+                Monster monster;
                 if (!monster_data.ContainsKey(map_id))
                 {
                     monster_data[map_id] = new Dictionary<int, Monster>();
@@ -260,17 +212,29 @@ namespace SupremePlayServer
 
                 if (!monster_data[map_id].ContainsKey(id))
                 {
-                    Monster m = new Monster();
-                    m.map_id = map_id;
-                    m.id = id;
-                    monster_data[map_id][id] = m;
+                    monster = new Monster();
+                    monster_data[map_id][id] = monster;
                 }
 
-                var temp = monster_data[map_id][id];
-                temp.mon_id = mon_id;
-                if (x != 0) temp.x = x;
-                if (y != 0) temp.y = y;
-                temp.delete_sw = sw;
+                monster = monster_data[map_id][id];
+                // 초기에만 저장할 것
+                if (monster.id == 0)
+                {
+                    int.TryParse(d["id"], out monster.id);
+                    int.TryParse(d["map_id"], out monster.map_id);
+                    int.TryParse(d["mon_id"], out monster.mon_id);
+                    int.TryParse(d["respawn"], out monster.respawn);
+                    int.TryParse(d["delete_sw"], out int delete_sw_value);
+                    monster.delete_sw = delete_sw_value != 0;
+                }
+
+                // 변동 변수들
+                int.TryParse(d["hp"], out monster.hp);
+                int.TryParse(d["direction"], out monster.direction);                
+                int.TryParse(d["sp"], out monster.sp);
+                int.TryParse(d["x"], out monster.x);
+                int.TryParse(d["y"], out monster.y);
+                monster.dead = monster.hp <= 0;
             }
             catch (Exception e)
             {
@@ -299,25 +263,30 @@ namespace SupremePlayServer
         }
             
 
-        public void SaveItem2(string data)
+        public void SaveItem(string data)
         {
             try
             {
-                string[] d = data.Split(',');
-                Item2 i = new Item2();
+                var d = system_db.ParseKeyValueData(data);
+                var i = new Item
+                {
+                    id = int.Parse(d["id"]),
+                    type = int.Parse(d["type"]),
+                    map_id = int.Parse(d["map_id"]),
+                    x = int.Parse(d["x"]),
+                    y = int.Parse(d["y"]),
+                    num = int.Parse(d["num"]),
+                    sw = int.Parse(d["sw"]),
+                    item_id = int.Parse(d["item_id"])
+                };
 
-                i.d_id = int.Parse(d[0]);
-                i.type2 = int.Parse(d[1]);
-                i.type1 = int.Parse(d[2]);
-                i.id = int.Parse(d[3]);
-                i.map_id = int.Parse(d[4]);
-                i.x = int.Parse(d[5]);
-                i.y = int.Parse(d[6]);
-                i.num = int.Parse(d[7]);
+                if (!item_data2.TryGetValue(i.map_id, out var itemList))
+                {
+                    itemList = new List<Item>();
+                    item_data2[i.map_id] = itemList;
+                }
 
-                if (!item_data2.ContainsKey(i.map_id))
-                    item_data2[i.map_id] = new List<Item2>();
-                item_data2[i.map_id].Add(i);
+                itemList.Add(i);
             }
             catch (Exception e)
             {
@@ -336,7 +305,7 @@ namespace SupremePlayServer
 
                 if (!item_data2.ContainsKey(map_id)) return;
                 var d = from i in item_data2[map_id]
-                        where i.d_id == id
+                        where i.id == id
                         select i;
                 if (d != null && d.Count() > 0)
                     item_data2[map_id].Remove(d.First());

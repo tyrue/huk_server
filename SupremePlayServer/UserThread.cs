@@ -305,14 +305,9 @@ namespace SupremePlayServer
                         }
 
                         // 몬스터 데이터 저장
-                        else if (GetMessage.Contains("<monster>"))
+                        else if (GetMessage.Contains("<monster_save>"))
                         {
-                            sd.SaveMonster(splitTag("monster", GetMessage));
-                        }
-
-                        else if (GetMessage.Contains("<monster2>"))
-                        {
-                            sd.SaveMonster2(splitTag("monster2", GetMessage));
+                            sd.SaveMonster(splitTag("monster_save", GetMessage));
                             mainform.Invoke((MethodInvoker)(() => mainform.Map_Packet(GetMessage, last_map_id, UserCode))); // 맵에 메시지 전체 전달
                         }
 
@@ -323,52 +318,37 @@ namespace SupremePlayServer
                         }
 
                         // 몬스터 데이터 로드
-                         else if (GetMessage.Contains("<req_monster>"))
+                        else if (GetMessage.Contains("<req_monster>"))
                         {
-                            //MessageBox.Show("몬스터 정보 요청");
                             if (!sd.monster_data.ContainsKey(last_map_id))
                             {
                                 SW.WriteLine("<req_monster>" + last_map_id + "</req_monster>");
                                 SW.Flush();
                                 continue;
                             }
+
                             var da = sd.monster_data[last_map_id].Values;
+                            string msg = "";
                             foreach (var d in da)
                             {
-                                string s = d.map_id + "," + d.id + "," + d.hp + "," + d.x + "," + d.y + "," + d.direction + "," + d.respawn + "," + d.mon_id;
-                                SW.WriteLine("<req_monster>" + s + "</req_monster>");
-                                SW.Flush();
-                                SW.WriteLine("<monster_sp>" + d.id + "," + d.sp + "</monster_sp>");
-                                SW.Flush();
+                                // 객체의 타입을 가져옴
+                                Type type = d.GetType();
+
+                                foreach (var field in type.GetFields())
+                                {
+                                    object value = field.GetValue(d); // 필드의 값 가져오기
+                                    msg += $"{field.Name}:{value}|";
+                                }
+                                SW.WriteLine("<req_monster>" + msg + "</req_monster>");
                             }
+
                             SW.Flush();
-                        }
-
-                        // 몬스터 마력 공유 : id, val
-                        else if (GetMessage.Contains("<monster_sp>"))
-                        {
-                            if (!sd.monster_data.ContainsKey(last_map_id)) continue;
-                            string data = system_db.splitTag("monster_sp", GetMessage);
-                            string[] co1 = { "," };
-                            String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
-
-                            int id = 0;
-                            int sp = 0;
-
-                            if (!int.TryParse(data2[0], out id)) continue;
-                            if (int.TryParse(data2[1], out sp)) continue;
-                            
-                            if (sd.monster_data[last_map_id].ContainsKey(id))
-                            {
-                                sd.monster_data[last_map_id][id].sp = sp;
-                                mainform.Invoke((MethodInvoker)(() => mainform.Map_Packet(GetMessage, last_map_id, UserCode)));
-                            }
                         }
 
                         // 공격 이펙트
                         else if (GetMessage.Contains("<attack_effect>"))
                         {
-                            string data = system_db.splitTag("attack_effect", GetMessage);
+                            string data = splitTag("attack_effect", GetMessage);
                             string[] co1 = { "," };
                             String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
 
@@ -385,7 +365,7 @@ namespace SupremePlayServer
                         // 스킬 이펙트
                         else if (GetMessage.Contains("<skill_effect>"))
                         {
-                            string data = system_db.splitTag("skill_effect", GetMessage);
+                            string data = splitTag("skill_effect", GetMessage);
                             string[] co1 = { "," };
                             String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
 
@@ -403,7 +383,7 @@ namespace SupremePlayServer
                         // 스킬 이펙트
                         else if (GetMessage.Contains("<e_skill_effect>"))
                         {
-                            string data = system_db.splitTag("e_skill_effect", GetMessage);
+                            string data = splitTag("e_skill_effect", GetMessage);
                             string[] co1 = { "," };
                             String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
 
@@ -419,11 +399,25 @@ namespace SupremePlayServer
                             SW.Flush();
                         }
 
+                        // 편지 보내기
+                        else if (GetMessage.Contains("<post>"))
+                        {
+                            string data = splitTag("post", GetMessage);
+                            Dictionary<string, string> dict = ParseKeyValueData(data);
+                            string target = dict["target_name"];
+                            if (mainform.UserByNameDict.ContainsKey(target))
+                            {
+                                mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage, UserCode)));
+                                mainform.UserByNameDict[target].SW.Flush();
+                            }
+                            SW.Flush();
+                        }
+
 
                         // DB에 아이템 데이터 저장
                         else if (GetMessage.Contains("<Drop>"))
                         {
-                            sd.SaveItem2(splitTag("Drop", GetMessage));
+                            sd.SaveItem(splitTag("Drop", GetMessage));
                             mainform.Invoke((MethodInvoker)(() => mainform.Map_Packet(GetMessage, last_map_id)));
                         }
 
@@ -438,18 +432,27 @@ namespace SupremePlayServer
                         else if (GetMessage.Contains("<req_item>"))
                         {
                             if (!sd.item_data2.ContainsKey(last_map_id)) continue;
-                            List<Item2> da = sd.item_data2[last_map_id];
+                            List<Item> da = sd.item_data2[last_map_id];
+                            string msg = "";
                             foreach (var d in da)
                             {
-                                SW.WriteLine("<Drop>" + d.d_id + "," + d.type2 + "," + d.type1 + "," + d.id + "," + d.map_id + "," + d.x + "," + d.y + "," + d.num + "</Drop>");
-                            }
+                                // 객체의 타입을 가져옴
+                                Type type = d.GetType();
 
+                                foreach (var field in type.GetFields())
+                                {
+                                    object value = field.GetValue(d); // 필드의 값 가져오기
+                                    msg += $"{field.Name}:{value}|";
+                                }
+                                SW.WriteLine("<Drop>" + msg + "</Drop>");
+                            }
+                            
                             SW.Flush();
                         }
 
                         else if (GetMessage.Contains("<item_summon>"))
                         {
-                            string data = system_db.splitTag("item_summon", GetMessage);
+                            string data = splitTag("item_summon", GetMessage);
                             string[] co1 = { "," };
                             String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
 
@@ -471,7 +474,7 @@ namespace SupremePlayServer
                         {
                             system_db.SaveMap(GetMessage);
 
-                            string data = system_db.splitTag("map_name", GetMessage);
+                            string data = splitTag("map_name", GetMessage);
                             string[] co1 = { "," };
                             String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
 
@@ -648,7 +651,7 @@ namespace SupremePlayServer
             return d2[0];
         }
 
-        public static Dictionary<string, string> ParseKeyValueData(string data)
+        public Dictionary<string, string> ParseKeyValueData(string data)
         {
             var result = new Dictionary<string, string>();
 
