@@ -11,13 +11,13 @@ namespace SupremePlayServer
         /// <summary>
         /// 해당 응용 프로그램의 주 진입점입니다.
         /// </summary>
-        static public MainForm mainForm;
+        static public mainForm mainForm;
         [STAThread]
         static void Main()
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            mainForm = new MainForm();
+            mainForm = new mainForm();
             Application.Run(mainForm);
         }
 

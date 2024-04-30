@@ -16,6 +16,7 @@ namespace SupremePlayServer
         public int sp;
         public int direction;
         public int respawn;
+        public int respawn_save;
         public bool dead;
         public int mon_id;
         public bool delete_sw;
@@ -30,6 +31,7 @@ namespace SupremePlayServer
             sp = 0;
             direction = 0;
             respawn = 0;
+            respawn_save = 0;
             dead = false;
             delete_sw = false;
         }

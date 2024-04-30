@@ -8,14 +8,13 @@ using System.Windows.Forms;
 
 namespace SupremePlayServer
 {
-    public partial class MainForm : Form
+    public partial class mainForm : Form
     {
         public Systemdata sd;
-        public List<UserThread> UserList;
         public Dictionary<int, List<UserThread>> MapUser2;
         public Dictionary<string, UserThread> UserByNameDict;
 
-        public System_DB system_db;
+        public System_DB systemDB;
         public int count_down = 0; // 리붓 카운트 다운
         System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
         public int exe_event = 0;
@@ -30,13 +29,13 @@ namespace SupremePlayServer
 
         private int secTime = 1000;
         private int randomMsgIdx = -1;
-        public MainForm()
+        public mainForm()
         {
             random = new Random();
             sd = new Systemdata();
-            system_db = sd.system_db; // new System_DB();
+            systemDB = sd.system_db; // new System_DB();
             sd.mainForm = this;
-            system_db.mainform = this;
+            systemDB.mainForm = this;
             print_chat_tag = new List<string>();
             make_chat_tag(print_chat_tag);
 
@@ -166,13 +165,13 @@ namespace SupremePlayServer
                     foreach (var s in list)
                     {
                         String[] data = s.Split(',');
-                        Map_Packet("<respawn>" + s + "</respawn>", int.Parse(data[0]));
+                        Map_Packet("respawn", s, int.Parse(data[0]));
                     }
                 }
 
                 if (t.Contains(":00:00"))
                 {
-                    Packet("<chat>맵의 모든 아이템들이 삭제 됩니다.</chat>");
+                    Packet("chat", "맵의 모든 아이템들이 삭제 됩니다.");
                     sd.DelAllItem();
                 }
             }
@@ -188,10 +187,10 @@ namespace SupremePlayServer
             {
                 count_down--;
                 textBox2.Text = count_down.ToString();
-                Packet("<chat>" + count_down + "초 후 리붓합니다. 안전한 곳으로 이동하시길 바랍니다.</chat>");
+                Packet("chat", count_down + "초 후 리붓합니다. 안전한 곳으로 이동하시길 바랍니다.");
                 if (count_down <= 0) // 전체 강퇴
                 {
-                    Packet("<ki>모두,비바람이 휘몰아치고 있습니다. 잠시만 기다려 주세요.,</ki>");
+                    Packet("ki", "모두,비바람이 휘몰아치고 있습니다. 잠시만 기다려 주세요.");
                     write_log("리붓 완료");
                     textBox2.Text = "";
                     timer.Enabled = false;
@@ -208,7 +207,8 @@ namespace SupremePlayServer
         {
             try
             {
-                if (UserList.Count == 0) return;
+                if (UserByNameDict.Count == 0) return;
+
                 int i = random.Next(0, sd.random_server_msg.Count);
                 while(i == randomMsgIdx)
                 {
@@ -216,7 +216,7 @@ namespace SupremePlayServer
                 }
                 string msg = sd.random_server_msg[i];
                 randomMsgIdx = i;
-                Packet("<chat2>[도움]"+ msg + "</chat2>");
+                Packet("chat2", "[도움]"+ msg);
             }
             catch
             {
@@ -256,8 +256,6 @@ namespace SupremePlayServer
         private void Form1_Load(object sender, EventArgs e)
         {
             // Initialize
-            UserList = new List<UserThread>();
-            List<String> a = new List<string> { "0" };
             MapUser2 = new Dictionary<int, List<UserThread>>();
             UserByNameDict = new Dictionary<string, UserThread>();
 
@@ -284,14 +282,8 @@ namespace SupremePlayServer
                     client = Listener.AcceptTcpClient();
                     // New Client User Thread
                     UserThread userthread = new UserThread();
-                    userthread.mainform = this;
-                    userthread.startClient(client);
-
-                    UserList.Add(userthread);
-
-                    if (!MapUser2.ContainsKey(0))
-                        MapUser2.Add(0, new List<UserThread>());
-                    MapUser2[0].Add(userthread);
+                    userthread.mainForm = this;
+                    userthread.StartClient(client);
                 }
             }
             catch (Exception e)
@@ -303,71 +295,62 @@ namespace SupremePlayServer
 
             }
         }
-
         #endregion
+        
         // 모든 유저에게 전송하는 패킷
-        public void Packet(String data, String userCode = "")
+        public void Packet(string tag, string body, String userCode = "")
         {
-            for (int i = 0; i < UserList.Count; i++)
+            foreach (var user in UserByNameDict.Values)
             {
-                if (!UserList[i].UserCode.Equals("*null*"))
-                {
-                    if (UserList[i].UserCode.Equals(userCode))
-                        continue;
-                    try
-                    {
-                        UserList[i].SW.WriteLine(data); // 메시지 보내기
-                        UserList[i].SW.Flush();
-                    }
-                    catch (Exception e) // 팅긴걸로 판단
-                    {
-                        removethread(UserList[i]);
-                    }
-                }
                 // 유효하지 않은 유저는 삭제
-                else
+                if (user.userCode.Equals("*null*"))
                 {
-                    removethread(UserList[i]);
+                    removethread(user);
+                    continue;
+                }
+
+                if (user.userCode.Equals(userCode)) continue;
+
+                try
+                {
+                    user.SendMessageWithTag(tag, body);
+                }
+                catch (Exception e) // 팅긴걸로 판단
+                {
+                    removethread(user);
                 }
             }
 
-            foreach(string tag in print_chat_tag)
+            foreach(string ch in print_chat_tag)
             {
-                if (data.Contains("<" + tag + ">"))
-                {
-                    string word = splitTag(tag, data);
-                    write_log(word);
-                    int visibleItems = listBox2.ClientSize.Height / listBox2.ItemHeight;
-                    listBox2.TopIndex = Math.Max(listBox2.Items.Count - visibleItems + 1, 0);
-                    break;
-                }
+                if (!ch.Contains(tag)) continue;
+                write_log(body);
+                int visibleItems = listBox2.ClientSize.Height / listBox2.ItemHeight;
+                listBox2.TopIndex = Math.Max(listBox2.Items.Count - visibleItems + 1, 0);
+                break;
             }
         }
 
         // 해당 맵의 유저들에게만 전송하는 패킷
-        public void Map_Packet(String data, int map_id, String userCode = "")
+        public void Map_Packet(string tag, string body, int map_id, String userCode = "")
         {
-            for (int i = 0; i < MapUser2[map_id].Count; i++)
+            foreach (var user in MapUser2[map_id])
             {
-                if (!MapUser2[map_id][i].UserCode.Equals("*null*"))
+                if (user.userCode.Equals("*null*"))
                 {
-                    if (MapUser2[map_id][i].UserCode.Equals(userCode))
-                        continue;
-                    try
-                    {
-                        //MessageBox.Show(data);
-                        MapUser2[map_id][i].SW.WriteLine(data); // 메시지 보내기
-                        MapUser2[map_id][i].SW.Flush();
-                    }
-                    catch (Exception e) // 팅긴걸로 판단
-                    {
-                        removethread(MapUser2[map_id][i]);
-                    }
+                    removethread(user);
+                    continue;
                 }
-                // 유효하지 않은 유저는 삭제
-                else
+
+                if (user.userCode.Equals(userCode)) continue;
+
+                try
                 {
-                    removethread(MapUser2[map_id][i]);
+                    user.SendMessageWithTag(tag, body);
+                }
+                catch (Exception e) // 팅긴걸로 판단
+                {
+                    removethread(user);
                 }
             }
         }
@@ -376,23 +359,14 @@ namespace SupremePlayServer
         {
             try
             {
-                if (MapUser2.ContainsKey(map_i) && MapUser2[map_i].Contains(userThread))
-                {
-                    MapUser2[map_i].Remove(userThread);
-                }
-                else
-                {
-                    return;
-                }
+                if (!MapUser2.ContainsKey(map_i)) return;
+                if (!MapUser2[map_i].Contains(userThread)) return;
+                MapUser2[map_i].Remove(userThread);
 
-                if (MapUser2[map_i].Count > 0)
-                {
-                    if (MapUser2[map_i][0].thread.IsAlive)
-                    {
-                        MapUser2[map_i][0].SW.WriteLine("<map_player>1</map_player>"); // 메시지 보내기
-                        MapUser2[map_i][0].SW.Flush();
-                    }
-                }
+                if (MapUser2[map_i].Count <= 0) return;
+                UserThread firstUser = MapUser2[map_i][0];
+                if (!firstUser.thread.IsAlive) return;
+                firstUser.SendMessageWithTag("map_player", "1");
             }
             catch (Exception e)
             {
@@ -407,20 +381,17 @@ namespace SupremePlayServer
             {
                 if (userthread == null) return;
                 // 접속이 되지 않은 유저 삭제 : 중간에 팅긴 유저에 대한 처리
-                if (!userthread.client.Connected) // 접속이 끊겼는데 접속 되어 있다고 처리되서 계속 오류나고 있음
+                int map_i = userthread.lastMapId;
+                removeMapUser(map_i, userthread);
+                if (!string.IsNullOrEmpty(userthread.userName))
                 {
-                    int map_i = userthread.last_map_id;
-                    removeMapUser(map_i, userthread);
-                    UserList.Remove(userthread);
-                    PlayerCount();
-                    if (!string.IsNullOrEmpty(userthread.UserName))
-                    {
-                        UserByNameDict.Remove(userthread.UserName);
-                        write_log(userthread.UserName + " 종료");
-                        Packet("<chat1>(알림): '" + userthread.UserName + "'님께서 종료하셨습니다.</chat1>");
-                    }
-                    Packet("<9>" + userthread.UserCode + "</9>");
+                    UserByNameDict.Remove(userthread.userName);
+                    write_log(userthread.userName + " 종료");
+                    Packet("chat1", "(알림): '" + userthread.userName + "'님께서 종료하셨습니다.");
                 }
+
+                PlayerCount();
+                Packet("9", userthread.userCode);
             }
             catch (Exception e)
             {
@@ -435,13 +406,10 @@ namespace SupremePlayServer
 
             try
             {
-                for (int i = 0; i < UserList.Count; i++)
+                foreach(var user in UserByNameDict.Values)
                 {
-                    if (UserList[i].UserId != null)
-                    {
-                        if (UserList[i].UserId.Equals(id))
-                            check = true;
-                    }
+                    if (user.userId == null) continue;
+                    if (user.userId.Equals(id)) check = true;
                 }
             }
             catch (Exception e)
@@ -464,12 +432,12 @@ namespace SupremePlayServer
         public void PlayerCount()
         {
             CheckForIllegalCrossThreadCalls = false;
-            toolStripStatusLabel2.Text = "접속자 수 : " + UserList.Count;
+            toolStripStatusLabel2.Text = "접속자 수 : " + UserByNameDict.Count;
 
             listBox1.Items.Clear();
-            for (int i = 0; i < UserList.Count; i++)
+            foreach(var user in UserByNameDict.Values)
             {
-                listBox1.Items.Add(UserList[i].UserName + "(" + UserList[i].UserId + ")" + ": " + UserList[i].map_name);
+                listBox1.Items.Add(user.userName + ": " + user.mapName);
             }
         }
 
@@ -485,6 +453,37 @@ namespace SupremePlayServer
             return d2[0];
         }
 
+        private void handle_prison()
+        {
+            if (listBox1.SelectedIndex < 0) return;
+
+            string name = listBox1.SelectedItem.ToString().Split(':')[0];
+            Packet("prison", name);
+            write_log(name + " 감옥");
+            textBox1.Text = "";
+        }
+
+        private void handle_emancipation()
+        {
+            if (listBox1.SelectedIndex < 0) return;
+
+            string name = listBox1.SelectedItem.ToString().Split(':')[0];
+            Packet("emancipation", name);
+            write_log(name + " 석방");
+            textBox1.Text = "";
+        }
+        private void handle_kick()
+        {
+            if (listBox1.SelectedIndex < 0) return;
+
+            string name = listBox1.SelectedItem.ToString().Split(':')[0];
+            string msg = textBox1.Text.Equals("") ? "강퇴 당하셨습니다." : textBox1.Text;
+            Packet("ki", name + "," + msg);
+            Packet("chat", name + "님이 강퇴 당하셨습니다.");
+            write_log(name + " 강퇴");
+            textBox1.Text = "";
+        }
+
         // 공지 보내기
         private void button1_Click(object sender, EventArgs e)
         {
@@ -492,62 +491,31 @@ namespace SupremePlayServer
             {
                 if (!textBox1.Text.Equals(""))
                 {
-                    Packet("<chat>(공지) : " + textBox1.Text + "</chat>");
+                    Packet("chat", "(공지) : " + textBox1.Text);
                     textBox1.Text = "";
                 }
             }
             else if (radioButton_2.Checked) // 감옥
             {
-                if (listBox1.SelectedIndex >= 0)
-                {
-                    string name = UserList[listBox1.SelectedIndex].UserName;
-                    Packet("<prison>" + name + "</prison>");
-                    write_log(name + " 감옥");
-                    textBox1.Text = "";
-                }
+                handle_prison();
             }
             else if (radioButton_3.Checked) // 석방
             {
-                if (listBox1.SelectedIndex >= 0)
-                {
-                    string name = UserList[listBox1.SelectedIndex].UserName;
-                    Packet("<emancipation>" + name + "</emancipation>");
-                    write_log(name + " 석방");
-                    textBox1.Text = "";
-                }
+                handle_emancipation();
             }
             else if (radioButton_4.Checked) // 유저 강퇴
             {
-                if (listBox1.SelectedIndex >= 0 && !textBox1.Text.Equals(""))
-                {
-                    string name = UserList[listBox1.SelectedIndex].UserName;
-                    if (textBox1.Text == "")
-                        Packet("<ki>" + name + ",강퇴 당하셨습니다.,</ki>");
-                    else
-                        Packet("<ki>" + name + "," + textBox1.Text + ",</ki>");
-                    Packet("<chat>" + name + "님이 강퇴 당하셨습니다." + "</chat>");
-                    write_log(name + " 강퇴");
-                    textBox1.Text = "";
-                }
+                handle_kick();
             }
             else if (radioButton_5.Checked) // 모두 강퇴
             {
-                Packet("<ki>모두," + textBox1.Text + ",</ki>");
+                Packet("ki", "모두," + textBox1.Text);
                 write_log("모두 강퇴 : " + textBox1.Text);
                 textBox1.Text = "";
             }
             // 자동 스크롤
             int visibleItems = listBox2.ClientSize.Height / listBox2.ItemHeight;
             listBox2.TopIndex = Math.Max(listBox2.Items.Count - visibleItems + 1, 0);
-        }
-
-        private void ComboBox1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-        }
-
-        private void TextBox1_TextChanged(object sender, EventArgs e)
-        {
-
         }
 
         private void message_keyDown(object sender, KeyPressEventArgs e)
@@ -565,7 +533,7 @@ namespace SupremePlayServer
                 int n = -1;
                 if (int.TryParse(exp_event_num.Text, out n))
                 {
-                    Packet("<exp_event> " + n + " </exp_event>");
+                    Packet("exp_event", n.ToString());
                     write_log("경험치 " + n + "배 이벤트 시작");
                     exe_event = n;
 
@@ -618,7 +586,7 @@ namespace SupremePlayServer
                 double n = -1;
                 if (double.TryParse(drop_event_num.Text, out n))
                 {
-                    Packet("<drop_event> " + n + " </drop_event>");
+                    Packet("drop_event", n.ToString());
                     write_log("드랍율 " + n + "배 이벤트 시작");
                     drop_event = n;
 
@@ -664,22 +632,6 @@ namespace SupremePlayServer
             }
         }
 
-        private void shipTime()
-        {
-
-        }
-
-        private void ListBox2_SelectedIndexChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void RadioButton_4_CheckedChanged(object sender, EventArgs e)
-        {
-
-        }
-
-
         private void ListBox1_MouseDown(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Right)
@@ -705,28 +657,15 @@ namespace SupremePlayServer
             {
                 if (str == "감옥")
                 {
-                    string name = UserList[listBox1.SelectedIndex].UserName;
-                    Packet("<prison>" + name + "</prison>");
-                    write_log(name + " 감옥");
-                    textBox1.Text = "";
+                    handle_prison();
                 }
                 if (str == "석방")
                 {
-                    string name = UserList[listBox1.SelectedIndex].UserName;
-                    Packet("<emancipation>" + name + "</emancipation>");
-                    write_log(name + " 석방");
-                    textBox1.Text = "";
+                    handle_emancipation();
                 }
                 if (str == "강퇴")
                 {
-                    string name = UserList[listBox1.SelectedIndex].UserName;
-                    if (textBox1.Text == "")
-                        Packet("<ki>" + name + ",강퇴 당하셨습니다.,</ki>");
-                    else
-                        Packet("<ki>" + name + "," + textBox1.Text + ",</ki>");
-                    Packet("<chat>" + name + "님이 강퇴 당하셨습니다." + "</chat>");
-                    write_log(name + " 강퇴");
-                    textBox1.Text = "";
+                    handle_kick();
                 }
             }
         }
@@ -778,23 +717,20 @@ namespace SupremePlayServer
         // 맵의 유저들에게 스위치 공유
         public void switch_send(string sw_num, string state, int map_id = 0)
         {
+            string msg = sw_num + "," + state;
             if (map_id > 0)
-                Map_Packet("<switches>" + sw_num + "," + state + "</switches>", map_id);
+                Map_Packet("switches", msg, map_id);
             else
-                Packet("<switches>" + sw_num + "," + state + "</switches>");
+                Packet("switches", msg);
         }
 
         public void monster_cooltime_reset(int map_id, int mon_id = 0)
         {
             foreach (var v in sd.monster_data[map_id].Values)
             {
-                if (mon_id != 0)
-                {
-                    if (v.id == mon_id && v.respawn > 0)
-                        v.respawn = 10;
-                }
-                else if (v.respawn > 0)
-                    v.respawn = 120;
+                if (v.respawn <= 0) continue;
+                if (v.id == mon_id) v.respawn = 10;
+                else v.respawn = 120;
             }
         }
 

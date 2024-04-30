@@ -18,7 +18,7 @@ namespace SupremePlayServer
         public List<string> random_server_msg;
 
         public System_DB system_db;
-        public MainForm mainForm;
+        public mainForm mainForm;
         public Systemdata()
         {
             try
@@ -107,12 +107,11 @@ namespace SupremePlayServer
 
             // 파티 관련
             dict.Add("<party>", 0);   // 파티
-            dict.Add("<partymessage>", 0);
+            dict.Add("<party_message>", 0);
+            dict.Add("<party_req>", 0);
             dict.Add("<party_no>", 0);
-            dict.Add("<nptreq>", 0);
-            dict.Add("<nptno>", 0);
-            dict.Add("<nptyes>", 0);
-            dict.Add("<nptout>", 0);
+            dict.Add("<party_yes>", 0);
+            dict.Add("<party_out>", 0);
 
             // 교환 관련
             dict.Add("<trade_invite>", 0);
@@ -133,7 +132,6 @@ namespace SupremePlayServer
             // 몬스터 관련
             dict.Add("<aggro>", 0); // 몬스터 어그로
             dict.Add("<respawn>", 0); // 몹 부활 공유
-            dict.Add("<hp>", 0); // 몹 체력 공유
             dict.Add("<enemy_dead>", 0); // 몹 죽음 공유
             dict.Add("<mon_move>", 0); // 몬스터 이동 공유
             dict.Add("<mon_damage>", 0); // 몬스터 데미지 표시
@@ -144,9 +142,9 @@ namespace SupremePlayServer
             dict.Add("<27>", 0); // 애니메이션 재생
 
             // 파티 관련
-            dict.Add("<partyhill>", 0); // 파티 힐
-            dict.Add("<nptgain>", 0); // 파티 아이템 획득
-            dict.Add("<npt_move>", 0); // 파티 맵 이동
+            dict.Add("<party_heal>", 0); // 파티 힐
+            dict.Add("<party_gain>", 0); // 파티 아이템 획득
+            dict.Add("<party_move>", 0); // 파티 맵 이동
 
             // 플레이어 관련
             dict.Add("<player_damage>", 0); // 플레이어 데미지 표시
@@ -155,8 +153,6 @@ namespace SupremePlayServer
             // 아이템 드랍 관련
             dict.Add("<Drop>", 0);    // 템 드랍
             dict.Add("<Drop_Get>", 0);    // 템 삭제
-            dict.Add("<drop_create>", 0); // 템 드랍
-            dict.Add("<drop_del>", 0);    // 템 삭제
             
             // pvp 관련
             dict.Add("<attack_effect>", 0); // pvp 평타
@@ -172,28 +168,71 @@ namespace SupremePlayServer
         // 로그에 넣지 않을 메시지
         public void makeignoreMessageDict(Dictionary<string, int> dict)
         {
-            dict.Add("<mon_move>", 0);
-            dict.Add("<aggro>", 0);
-            dict.Add("<mon_damage>", 0);
-            dict.Add("<player_damage>", 0);
-            dict.Add("<enemy_dead>", 0);
-            dict.Add("<monster>", 0);
-            dict.Add("<hp>", 0);
-            dict.Add("<drop_del>", 0);
-            dict.Add("<del_item>", 0);
-            dict.Add("<drop_create>", 0);
-            dict.Add("<userdata>", 0);
-            dict.Add("<Drop>", 0);
-            dict.Add("<show_range_skill>", 0);
-            dict.Add("<monster_sp>", 0);
-            dict.Add("<Drop_Get>", 0);
-            dict.Add("<27>", 0);
-            dict.Add("<nptgain>", 0);
-            dict.Add("<partyhill>", 0);
-            dict.Add("<npt_move>", 0);
-            dict.Add("<attack_effect>", 0);
-            dict.Add("<skill_effect>", 0);
-            dict.Add("<monster_chat>", 0);
+            // 메시지 관련
+            dict.Add("<System_Message>", 0);
+
+            // 길드 관련
+            dict.Add("<guild_group>", 0);
+            dict.Add("<guild_invite>", 0);
+            dict.Add("<guild_delete>", 0);
+
+            // 운영자 권한 관련
+            dict.Add("<summon>", 0);
+            dict.Add("<all_summon>", 0);
+            dict.Add("<prison>", 0);  // 감옥
+            dict.Add("<cashgive>", 0);
+
+            // 파티 관련
+            dict.Add("<party>", 0);   // 파티
+            dict.Add("<party_req>", 0);
+            dict.Add("<party_no>", 0);
+            dict.Add("<party_yes>", 0);
+            dict.Add("<party_out>", 0);
+            dict.Add("<party_heal>", 0); // 파티 힐
+            dict.Add("<party_gain>", 0); // 파티 아이템 획득
+
+            // 교환 관련
+            dict.Add("<trade_invite>", 0);
+            dict.Add("<trade_system>", 0);
+            dict.Add("<trade_okay>", 0);
+            dict.Add("<trade_fail>", 0);
+
+            // 기타
+            dict.Add("<switches>", 0); // 스위치 공유
+            dict.Add("<variables>", 0); // 변수 공유
+            dict.Add("<8>", 0); // 유저 죽음 알림
+
+            // 몬스터 관련
+            dict.Add("<aggro>", 0); // 몬스터 어그로
+            dict.Add("<respawn>", 0); // 몹 부활 공유
+            dict.Add("<hp>", 0); // 몹 체력 공유
+            dict.Add("<enemy_dead>", 0); // 몹 죽음 공유
+            dict.Add("<mon_move>", 0); // 몬스터 이동 공유
+            dict.Add("<mon_damage>", 0); // 몬스터 데미지 표시
+
+            // 애니메이션 관련
+            dict.Add("<event_animation>", 0);
+            dict.Add("<player_animation>", 0);
+            dict.Add("<27>", 0); // 애니메이션 재생
+
+            // 플레이어 관련
+            dict.Add("<player_damage>", 0); // 플레이어 데미지 표시
+            dict.Add("<map_chat>", 0); // 플레이어 말풍선 표시
+
+            // 아이템 드랍 관련
+            dict.Add("<Drop>", 0);    // 템 드랍
+            dict.Add("<drop_create>", 0); // 템 드랍
+            dict.Add("<drop_del>", 0);    // 템 삭제
+
+            // pvp 관련
+            dict.Add("<attack_effect>", 0); // pvp 평타
+            dict.Add("<skill_effect>", 0); // pvp 스킬
+
+            // 기타
+            dict.Add("<se_play>", 0); // 효과음 실행
+            dict.Add("<monster_chat>", 0); // 몬스터 말풍선 표시
+            dict.Add("<show_range_skill>", 0); // 스킬 
+            dict.Add("<make_range_sprite>", 0); // 범위 스킬 이펙트
         }
 
         public void SaveMonster(string data)
@@ -226,12 +265,13 @@ namespace SupremePlayServer
                     int.TryParse(d["respawn"], out monster.respawn);
                     int.TryParse(d["delete_sw"], out int delete_sw_value);
                     monster.delete_sw = delete_sw_value != 0;
+                    monster.respawn_save = monster.respawn;
                 }
 
                 // 변동 변수들
                 int.TryParse(d["hp"], out monster.hp);
-                int.TryParse(d["direction"], out monster.direction);                
                 int.TryParse(d["sp"], out monster.sp);
+                int.TryParse(d["direction"], out monster.direction);                
                 int.TryParse(d["x"], out monster.x);
                 int.TryParse(d["y"], out monster.y);
                 monster.dead = monster.hp <= 0;
@@ -253,8 +293,12 @@ namespace SupremePlayServer
 
                 if (!monster_data.ContainsKey(map_id)) return;
                 if (!monster_data[map_id].ContainsKey(id)) return;
-                if (monster_data[map_id][id].delete_sw) monster_data[map_id].Remove(id);
-
+                if (monster_data[map_id][id].delete_sw)
+                {
+                    monster_data[map_id].Remove(id);
+                    return;
+                }
+                monster_data[map_id][id].dead = true;
             }
             catch (Exception e)
             {
@@ -350,7 +394,7 @@ namespace SupremePlayServer
                     data.respawn -= 60;
                     if (data.respawn <= 0)
                     {
-                        data.respawn = 0;
+                        data.respawn = data.respawn_save;
                         string s = data.map_id + "," + data.id + "," + data.x + "," + data.y + "," + data.direction;
                         data.dead = false;
                         list.Add(s);

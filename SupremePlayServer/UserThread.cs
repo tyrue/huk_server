@@ -12,660 +12,531 @@ namespace SupremePlayServer
     public class UserThread
     {
         // Network Stream
-        NetworkStream NS = null;
-        StreamReader SR = null;
-        public StreamWriter SW = null;
+        public NetworkStream NS;
+        public StreamReader SR;
+        public StreamWriter SW;
         public TcpClient client;
 
-        public String UserCode = "*null*";
-        public MainForm mainform;
+        public mainForm mainForm;
+        public string userCode = "*null*";
+        public string userId;
+        public string userName;
+        public int lastMapId = 0;
+        public string mapName;
+        public bool isVersionValid = false;
 
-        // User Data
-        public String UserId;
-        public String UserName = "";
+        private Systemdata systemData;
+        private System_DB systemDB;
+        public Thread thread;
 
-        // Get Packet List
-        Systemdata sd;
-        public Thread thread = null;
+        private System.Timers.Timer versionCheckTimer;
 
-        public int last_map_id = 0;
-        public String map_name = "";
-        System_DB system_db;
-        bool is_v = false;
-
-        // 타이머 생성 및 시작
-        System.Timers.Timer timer2;
-
-        public void startClient(TcpClient clientSocket)
+       
+        public void StartClient(TcpClient clientSocket)
         {
-            sd = mainform.sd;
-            system_db = mainform.system_db;
-            
-            // Get UserCode Randomly
-            Random random = new Random();
-            int randval = random.Next(0, 9999999);
-            UserCode = randval.ToString();
-
-            // Create Client Socket & Thread
-            client = clientSocket;
-            thread = new Thread(NetListener);
-            thread.IsBackground = true;
-            thread.Start();
-
-            timer2 = new System.Timers.Timer();
-            timer2.Interval = 1000;
-            timer2.Elapsed += new System.Timers.ElapsedEventHandler(timer_tick);
+            InitializeClient(clientSocket);
+            StartListenerThread();
+            StartVersionCheckTimer();
         }
 
-        void timer_tick(object sender, EventArgs e)
+        private void InitializeClient(TcpClient clientSocket)
+        {
+            systemData = mainForm.sd;
+            systemDB = mainForm.systemDB;
+            userCode = new Random().Next(0, 9999999).ToString();
+
+            client = clientSocket;
+            NS = client.GetStream();
+            SR = new StreamReader(NS, Encoding.UTF8);
+            SW = new StreamWriter(NS, Encoding.UTF8);
+        }
+
+        private void StartListenerThread()
+        {
+            thread = new Thread(NetListener) { IsBackground = true };
+            thread.Start();
+        }
+
+        private void StartVersionCheckTimer()
+        {
+            versionCheckTimer = new System.Timers.Timer();
+            versionCheckTimer.Interval = 5000;
+            versionCheckTimer.Elapsed += new System.Timers.ElapsedEventHandler(VersionCheckTimerTick);
+            versionCheckTimer.AutoReset = false;
+        }
+
+        private void VersionCheckTimerTick(object sender, EventArgs e)
+        {
+            mainForm.write_log("카운트다운 끝");
+            if (!isVersionValid)
+            {
+                mainForm.write_log("version_false");
+                SendAndClose("<over>버전이 다릅니다.</over>");
+            }
+            else
+            {
+                mainForm.write_log("version_true");
+            }
+
+            versionCheckTimer.Stop();
+        }
+
+
+        // Thread - Net Listener
+        private void NetListener()
         {
             try
             {
-                mainform.write_log("카운트다운 끝");
-                if (!is_v)
+                while (client.Connected)
                 {
-                    mainform.write_log("version_false");
-                    SW.WriteLine("<over>버전이 다릅니다.</over>");
-                    SW.Close();
-                    SR.Close();
-                    client.Close();
-                    NS.Close();
-                }
-                else
-                {
-                    mainform.write_log("version_true");
+                    string receivedMessage = SR.ReadLine();
+                    if (string.IsNullOrEmpty(receivedMessage)) continue;
+
+                    HandleMessage(receivedMessage);
                 }
             }
-            catch
+            catch (Exception e)
             {
-                mainform.write_log(e.ToString());
+                mainForm.write_log(e.ToString());
             }
-            timer2.Stop();
+            finally
+            {
+                CloseClient();
+            }
         }
 
-        // Thread - Net Listener
-        public void NetListener()
+        private void HandleMessage(string message)
         {
-            NS = client.GetStream(); // 소켓에서 메시지를 가져오는 스트림
-            SR = new StreamReader(NS, Encoding.UTF8); // Get message
-            SW = new StreamWriter(NS, Encoding.UTF8); // Send message
+            string[] flag = { ">" };
+            String[] d1 = message.Split(flag, StringSplitOptions.RemoveEmptyEntries);
+            if (d1.Length <= 1) return;
 
-            string GetMessage = string.Empty;
-            while (true)
+            string tag = d1[0].Substring(1);
+            string body = splitTag(tag, message);
+
+            // 로그에 메시지 저장
+            if (!string.IsNullOrEmpty(userName))
             {
-                while (client.Connected) //클라이언트 메시지받기
-                {
-                    try
+                if (!systemData.ignoreMessageDict.ContainsKey(tag)) mainForm.write_log_user(userName, message);
+            }
+
+            switch(tag)
+            {
+                case "0":
+                    SendMessageWithTag("0", userCode + " 'e' n=Suprememay Server");
+                    break;
+                case "login":
+                    HandleLogin(tag, body);
+                    break;
+                case "regist":
+                    systemDB.Registeration(SW, tag, body);
+                    break;
+                case "versione":
+                    HandleVersionCheck(tag, body);
+                    break;
+                case "2":
+                    SendMessageWithTag(tag, userId);
+                    break;
+                case "check":
+                    SendMessageWithTag(tag, "standard");
+                    break;
+                case "timer_v":
+                    if (body == "ok") isVersionValid = true;
+                    break;
+                case "userdata":
+                    systemDB.SaveData2(body, userId);
+                    break;
+                case "exp_event":
+                    HandleEvent(tag, body);
+                    break;
+                case "drop_event":
+                    HandleEvent(tag, body);
+                    break;
+                case "chat":
+                    mainForm.Packet(tag, body);
+                    break;
+                case "5":
+                    mainForm.Packet("5", userCode + ","+ body, userCode);
+                    break;
+                case "m5":
+                    mainForm.Map_Packet("5", userCode + "," + body, lastMapId, userCode);
+                    break;
+                case "dtloadreq":
+                    systemDB.SendData(SW, userId);
+                    break;
+                case "monster_save":
+                    systemData.SaveMonster(body);
+                    mainForm.Map_Packet(tag, body, lastMapId, userCode);
+                    break;
+                case "enemy_dead":
+                    systemData.DeleteMonster(body);
+                    mainForm.Map_Packet(tag, body, lastMapId, userCode);
+                    break;
+                case "req_monster":
+                    HandleReqMonster(tag, body);
+                    break;
+                case "attack_effect":
                     {
-                        GetMessage = SR.ReadLine();
-                        if (string.IsNullOrEmpty(GetMessage)) continue;
-                        // Log
-                        /*
-                        if (mainform != null)
-                            mainform.label1.Invoke((MethodInvoker)(() => mainform.label1.Text += GetMessage + "\n"));
-                         * */
-                        //MessageBox.Show(GetMessage);
-                        // Authorization 인증
-                        if (!string.IsNullOrEmpty(UserName))
+                        string[] temp = { "," };
+                        String[] data = body.Split(temp, StringSplitOptions.RemoveEmptyEntries);
+                        string target = data[0];
+
+                        if (!mainForm.UserByNameDict.ContainsKey(target)) return;
+                        mainForm.UserByNameDict[target].SendMessageWithTag(tag, userCode);
+                        break;
+                    }
+                case "skill_effect":
+                    {
+                        string[] temp = { "," };
+                        String[] data = body.Split(temp, StringSplitOptions.RemoveEmptyEntries);
+                        string target = data[0];
+                        string skill_id = data[1];
+
+                        if (!mainForm.UserByNameDict.ContainsKey(target)) return;
+                        mainForm.UserByNameDict[target].SendMessageWithTag(tag, userCode + "," + skill_id);
+                        break;
+                    }
+                case "e_skill_effect":
+                    {
+                        string[] temp = { "," };
+                        String[] data2 = body.Split(temp, StringSplitOptions.RemoveEmptyEntries);
+
+                        string target = data2[0];
+                        string enemy_id = data2[1];
+                        string skill_id = data2[2];
+                        if (!mainForm.UserByNameDict.ContainsKey(target)) return;
+                        mainForm.UserByNameDict[target].SendMessageWithTag(tag, enemy_id + "," + skill_id);
+                    }
+                    break;
+                case "post":
+                    {
+                        Dictionary<string, string> dict = ParseKeyValueData(body);
+                        string target = dict["target_name"];
+                        if (!mainForm.UserByNameDict.ContainsKey(target)) return;
+                        mainForm.UserByNameDict[target].SendMessage(message);
+                    }
+                    break;
+                case "Drop":
+                    systemData.SaveItem(body);
+                    mainForm.Map_Packet(tag, body, lastMapId);
+                    break;
+                case "Drop_Get":
+                    systemData.DelItem2(body);
+                    mainForm.Map_Packet(tag, body, lastMapId);
+                    break;
+                case "req_item":
+                    {
+                        if (!systemData.item_data2.ContainsKey(lastMapId)) return;
+                        List<Item> dat = systemData.item_data2[lastMapId];
+                        string msg2 = "";
+                        foreach (var d in dat)
                         {
-                            string[] co1 = { ">" };
-                            String[] d1 = GetMessage.Split(co1, StringSplitOptions.RemoveEmptyEntries);
-                            string tag = d1[0] + ">";
+                            // 객체의 타입을 가져옴
+                            Type type = d.GetType();
 
-                            if(!sd.ignoreMessageDict.ContainsKey(tag)) mainform.write_log_user(UserName, GetMessage);
-                        }
-
-                        if (GetMessage.Contains("<0>"))
-                        {
-                            SW.WriteLine("<0 " + UserCode + ">'e' n=Suprememay Server</0>"); // 메시지 보내기
-                            SW.Flush();
-                        }
-
-                        // Registration
-                        else if (GetMessage.Contains("<regist>"))
-                        {
-                            system_db.Registeration(NS, GetMessage);
-                        }
-
-                        // Login
-                        else if (GetMessage.Contains("<login"))
-                        {
-                            String Ldata = system_db.Login(GetMessage); // 로그인 결과 받아옴
-
-                            String[] words = Ldata.Split(',');
-                            int resultcode = Int32.Parse(words[2]);
-
-                            bool existconn = false;
-                            mainform.Invoke((MethodInvoker)(() => existconn = mainform.Checkid(words[1])));
-
-                            if (existconn) resultcode = 3;
-
-                            // 아이디 잘못 입력
-                            if (resultcode == 0)
-                                SW.WriteLine("<login>wu,1</login>");
-
-                            // 비번 잘못입력
-                            else if (resultcode == 1)
-                                SW.WriteLine("<login>wp,1</login>");
-
-                            // 로긴 성공
-                            else if (resultcode == 2)
+                            foreach (var field in type.GetFields())
                             {
-                                if (mainform.UserList.Count > mainform.max_user_name)
-                                {
-                                    SW.WriteLine("<server_msg>서버 유저 수 제한입니다. 다음에 시도해주세요.</sever_msg>"); // 메시지 보내기
-                                    SW.Flush();
-                                    continue;
-                                }
-
-                                SW.WriteLine("<login>allow," + words[0] + "</login>");
-
-                                // Set UserName, UserId
-                                UserName = words[0];
-                                UserId = words[1];
-                                mainform.UserByNameDict.Add(UserName, this);
-                                SW.WriteLine("<server_msg>흑부엉의 바람의나라에 오신것을 환영합니다.</server_msg>");
+                                object value = field.GetValue(d); // 필드의 값 가져오기
+                                msg2 += $"{field.Name}:{value}|";
                             }
-
-                            // 이미 접속중
-                            else if (resultcode == 3)
-                                SW.WriteLine("<login>al,1</login>");
-
-                            SW.Flush();
-                        }
-
-                        else if (GetMessage.Contains("<2>"))
-                        {
-                            SW.WriteLine("<2>" + UserId + "</2>");
-                            SW.Flush();
-                        }
-
-                        else if (GetMessage.Contains("<check>"))
-                        {
-                            SW.WriteLine("<check>standard</check>");
-                            SW.Flush();
-                        }
-
-                        else if (GetMessage.Contains("<versione>"))
-                        {
-                            string ver = splitTag("versione", GetMessage);
-                            if (ver != mainform.version)
-                            {
-                                SW.WriteLine("<over>버전이 다릅니다.</over>");
-                                SW.WriteLine("<versione>" + mainform.version + "</versione>");
-                                SW.Close();
-                                SR.Close();
-                                client.Close();
-                                NS.Close();
-                                return;
-                            }
-                            else
-                            {
-                                mainform.write_log("카운트다운 시작");
-                                SW.WriteLine("<versione>" + mainform.version + "</versione>");
-                                timer2.Start();
-                                // 여기서부터 5초안에 타이머 켜서 만약 원하는 답을 주지 않을 경우 퇴출 시켜버림
-                                SW.WriteLine("<timer_v></timer_v>");
-                            }
-                            SW.Flush();
-                        }
-
-                        else if (GetMessage.Contains("<timer_v>"))
-                        {
-                            string ver = splitTag("timer_v", GetMessage);
-                            if (ver == "ok")
-                            {
-                                is_v = true;
-                            }
-                        }
-
-
-                        // 유저 데이터 저장
-                        else if (GetMessage.Contains("<userdata>"))
-                        {
-                            system_db.SaveData2(GetMessage, UserId);
-
-                            try
-                            {
-                                if (UserCode.Equals("*null*"))
-                                {
-                                    mainform.Invoke((MethodInvoker)(() => mainform.removethread(this)));
-                                    thread.Abort();
-                                }
-                            }
-                            catch (Exception e)
-                            {
-                                mainform.write_log(e.ToString());
-                                //MessageBox.Show();
-                            }
-                        }
-
-                        // 몬스터 데이터 저장
-                        else if (GetMessage.Contains("<mondata>"))
-                        {
-                            try
-                            {
-                                string data = splitTag("mondata", GetMessage);
-                            }
-                            catch (Exception e)
-                            {
-                                mainform.write_log(e.ToString());
-                            }
-                        }
-
-                        // 경험치 이벤트 확인
-                        else if (GetMessage.Contains("<exp_event>"))
-                        {
-                            int n = 0;
-                            if (mainform.exe_event > 0) n = mainform.exe_event;
-                            SW.WriteLine("<exp_event>" + n + "</exp_event>");
-                            SW.Flush();
-                        }
-
-                        // 드랍율 이벤트 확인
-                        else if (GetMessage.Contains("<drop_event>"))
-                        {
-                            double n = 0;
-                            if (mainform.exe_event > 0) n = mainform.drop_event;
-                            SW.WriteLine("<drop_event>" + n + "</drop_event>");
-                            SW.Flush();
-                        }
-
-                        // 현재 유저의 정보를 모든 유저에게 보냄
-                        else if (GetMessage.Contains("<chat>"))
-                        {
-                            string[] co1 = { "<chat>" };
-                            String[] d1 = GetMessage.Split(co1, StringSplitOptions.RemoveEmptyEntries);
-
-                            mainform.Invoke((MethodInvoker)(() => mainform.Packet("<chat>" + d1[0])));
-                        }
-
-                        // 현재 유저의 정보를 모든 유저에게 보냄
-                        else if (GetMessage.Contains("<5>"))
-                        {
-                            string[] co1 = { "<5>" };
-                            String[] d1 = GetMessage.Split(co1, StringSplitOptions.RemoveEmptyEntries);
-
-                            mainform.Invoke((MethodInvoker)(() => mainform.Packet("<5 " + UserCode + ">" + d1[0], UserCode)));
-                        }
-
-                        // 현재 유저의 정보를 같은 맵 유저에게 보냄
-                        else if (GetMessage.Contains("<m5>"))
-                        {
-                            string[] co1 = { "<m5>" };
-                            String[] d1 = GetMessage.Split(co1, StringSplitOptions.RemoveEmptyEntries);
-
-                            mainform.Invoke((MethodInvoker)(() => mainform.Map_Packet("<5 " + UserCode + ">" + d1[0], last_map_id, UserCode)));
-                        }
-
-                        // 유저 데이터 로드
-                        else if (GetMessage.Contains("<dtloadreq>"))
-                        {
-                            system_db.SendData(NS, UserId);
-                        }
-
-                        // 몬스터 데이터 저장
-                        else if (GetMessage.Contains("<monster_save>"))
-                        {
-                            sd.SaveMonster(splitTag("monster_save", GetMessage));
-                            mainform.Invoke((MethodInvoker)(() => mainform.Map_Packet(GetMessage, last_map_id, UserCode))); // 맵에 메시지 전체 전달
-                        }
-
-                        else if (GetMessage.Contains("<enemy_dead>"))
-                        {
-                            sd.DeleteMonster(splitTag("enemy_dead", GetMessage));
-                            mainform.Invoke((MethodInvoker)(() => mainform.Map_Packet(GetMessage, last_map_id, UserCode))); // 맵에 메시지 전체 전달
-                        }
-
-                        // 몬스터 데이터 로드
-                        else if (GetMessage.Contains("<req_monster>"))
-                        {
-                            if (!sd.monster_data.ContainsKey(last_map_id))
-                            {
-                                SW.WriteLine("<req_monster>" + last_map_id + "</req_monster>");
-                                SW.Flush();
-                                continue;
-                            }
-
-                            var da = sd.monster_data[last_map_id].Values;
-                            string msg = "";
-                            foreach (var d in da)
-                            {
-                                // 객체의 타입을 가져옴
-                                Type type = d.GetType();
-
-                                foreach (var field in type.GetFields())
-                                {
-                                    object value = field.GetValue(d); // 필드의 값 가져오기
-                                    msg += $"{field.Name}:{value}|";
-                                }
-                                SW.WriteLine("<req_monster>" + msg + "</req_monster>");
-                            }
-
-                            SW.Flush();
-                        }
-
-                        // 공격 이펙트
-                        else if (GetMessage.Contains("<attack_effect>"))
-                        {
-                            string data = splitTag("attack_effect", GetMessage);
-                            string[] co1 = { "," };
-                            String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
-
-                            string target = data2[0];
-
-                            if (mainform.UserByNameDict.ContainsKey(target))
-                            {
-                                mainform.UserByNameDict[target].SW.WriteLine("<attack_effect>" + UserCode + "</attack_effect>");
-                                mainform.UserByNameDict[target].SW.Flush();
-                            }
-                            SW.Flush();
-                        }
-
-                        // 스킬 이펙트
-                        else if (GetMessage.Contains("<skill_effect>"))
-                        {
-                            string data = splitTag("skill_effect", GetMessage);
-                            string[] co1 = { "," };
-                            String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
-
-                            string target = data2[0];
-                            string skill_id = data2[1];
-
-                            if (mainform.UserByNameDict.ContainsKey(target))
-                            {
-                                mainform.UserByNameDict[target].SW.WriteLine("<skill_effect>" + UserCode + "," + skill_id + "</skill_effect>");
-                                mainform.UserByNameDict[target].SW.Flush();
-                            }
-                            SW.Flush();
-                        }
-
-                        // 스킬 이펙트
-                        else if (GetMessage.Contains("<e_skill_effect>"))
-                        {
-                            string data = splitTag("e_skill_effect", GetMessage);
-                            string[] co1 = { "," };
-                            String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
-
-                            string target = data2[0];
-                            string enemy_id = data2[1];
-                            string skill_id = data2[2];
-
-                            if (mainform.UserByNameDict.ContainsKey(target))
-                            {
-                                mainform.UserByNameDict[target].SW.WriteLine("<e_skill_effect>" + enemy_id + "," + skill_id + "</e_skill_effect>");
-                                mainform.UserByNameDict[target].SW.Flush();
-                            }
-                            SW.Flush();
-                        }
-
-                        // 편지 보내기
-                        else if (GetMessage.Contains("<post>"))
-                        {
-                            string data = splitTag("post", GetMessage);
-                            Dictionary<string, string> dict = ParseKeyValueData(data);
-                            string target = dict["target_name"];
-                            if (mainform.UserByNameDict.ContainsKey(target))
-                            {
-                                mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage, UserCode)));
-                                mainform.UserByNameDict[target].SW.Flush();
-                            }
-                            SW.Flush();
-                        }
-
-
-                        // DB에 아이템 데이터 저장
-                        else if (GetMessage.Contains("<Drop>"))
-                        {
-                            sd.SaveItem(splitTag("Drop", GetMessage));
-                            mainform.Invoke((MethodInvoker)(() => mainform.Map_Packet(GetMessage, last_map_id)));
-                        }
-
-                        // DB에 아이템 데이터 삭제
-                        else if (GetMessage.Contains("<Drop_Get>"))
-                        {
-                            sd.DelItem2(splitTag("Drop_Get", GetMessage));
-                            mainform.Invoke((MethodInvoker)(() => mainform.Map_Packet(GetMessage, last_map_id)));
-                        }
-
-                        // 현재 맵의 아이템 정보 전달
-                        else if (GetMessage.Contains("<req_item>"))
-                        {
-                            if (!sd.item_data2.ContainsKey(last_map_id)) continue;
-                            List<Item> da = sd.item_data2[last_map_id];
-                            string msg = "";
-                            foreach (var d in da)
-                            {
-                                // 객체의 타입을 가져옴
-                                Type type = d.GetType();
-
-                                foreach (var field in type.GetFields())
-                                {
-                                    object value = field.GetValue(d); // 필드의 값 가져오기
-                                    msg += $"{field.Name}:{value}|";
-                                }
-                                SW.WriteLine("<Drop>" + msg + "</Drop>");
-                            }
-                            
-                            SW.Flush();
-                        }
-
-                        else if (GetMessage.Contains("<item_summon>"))
-                        {
-                            string data = splitTag("item_summon", GetMessage);
-                            string[] co1 = { "," };
-                            String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
-
-                            string target = data2[0];
-                            string x = data2[1];
-                            string y = data2[2];
-
-                            if (mainform.UserByNameDict.ContainsKey(target))
-                            {
-                                mainform.UserByNameDict[target].SW.WriteLine("<item_summon>" + x + "," + y + "</item_summon>");
-                                mainform.UserByNameDict[target].SW.Flush();
-                            }
-                            SW.Flush();
-                        }
-
-                        // 유저가 맵을 옮김 -> 바뀐 맵에서 기준이 되는지 확인
-                        // 현재 맵 이름 저장
-                        else if (GetMessage.Contains("<map_name>"))
-                        {
-                            system_db.SaveMap(GetMessage);
-
-                            string data = splitTag("map_name", GetMessage);
-                            string[] co1 = { "," };
-                            String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
-
-                            int map_id = int.Parse(data2[0]);
-                            if (!mainform.MapUser2.ContainsKey(map_id)) // 해당 맵에 아무도 없었다면?
-                            {
-                                mainform.MapUser2.Add(map_id, new List<UserThread>());
-                                SW.WriteLine("<map_player>1</map_player>");
-                            }
-                            else if (mainform.MapUser2[map_id].Count == 0)
-                            {
-                                SW.WriteLine("<map_player>1</map_player>");
-                            }
-                            else
-                            {
-                                SW.WriteLine("<map_player>0</map_player>");
-                            }
-                            SW.Flush();
-                            mainform.MapUser2[map_id].Add(this);
-
-                            // 이전에 있었던 리스트에서 제거함
-                            mainform.removeMapUser(last_map_id, this);
-                            last_map_id = map_id;
-                            map_name = sd.SendMap(last_map_id);
-                            mainform.PlayerCount();
-                        }
-
-
-                        // 유저 종료
-                        else if (GetMessage.Contains("<9>"))
-                        {
-                            SW.Close();
-                            SR.Close();
-                            client.Close();
-                            NS.Close();
-                            mainform.removethread(this);
-                            UserCode = "*null*";
-                        }
-
-                        else if (GetMessage.Contains("<party_switch>"))
-                        {
-                            // 스위치 id, 스위치 상태, 맵 id
-                            string data = splitTag("party_switch", GetMessage);
-                            string[] co1 = { "," };
-                            String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
-                            mainform.switch_send(data2[0], data2[1], int.Parse(data2[2]));
-                        }
-
-                        else if (GetMessage.Contains("<party_quest_check>"))
-                        {
-                            string data = splitTag("party_quest_check", GetMessage);
-                            int map_id;
-                            if (int.TryParse(data, out map_id))
-                            {
-                                try
-                                {
-                                    int[] check = mainform.sd.checkPartyQuest(map_id);
-                                    if (check[0] != 0)
-                                    {
-                                        SW.WriteLine("<party_quest_check>" + check[0].ToString() + "," + check[1].ToString() + "</party_quest_check>");
-                                        SW.Flush();
-                                    }
-                                }
-                                catch (Exception e)
-                                {
-                                    mainform.write_log(e.ToString());
-                                }
-                            }
-                        }
-
-                        else if (GetMessage.Contains("<ship_time_check>"))
-                        {
-                            try
-                            {
-                                SW.WriteLine("<ship_time_check>" + mainform.now_ship_target() + "</ship_time_check>");
-                                SW.Flush();
-                            }
-                            catch (Exception e)
-                            {
-                                mainform.write_log(e.ToString());
-                            }
-                        }
-
-                        else if (GetMessage.Contains("<monster_cooltime_reset>"))
-                        {
-                            // 스위치 id, 스위치 상태, 맵 id
-                            string data = splitTag("monster_cooltime_reset", GetMessage);
-                            string[] co1 = { "," };
-                            String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
-                            if (data2.Length >= 2)
-                                mainform.monster_cooltime_reset(int.Parse(data2[0]), int.Parse(data2[1]));
-                            else
-                                mainform.monster_cooltime_reset(int.Parse(data2[0]));
-                        }
-
-                        else if (GetMessage.Contains("<npt_move>"))
-                        {
-                            mainform.Invoke((MethodInvoker)(() => mainform.Map_Packet(GetMessage, last_map_id)));
-                        }
-
-                        else if (GetMessage.Contains("<whispers>"))
-                        {
-                            string data = splitTag("whispers", GetMessage);
-                            string[] co1 = { "," };
-                            String[] data2 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
-
-                            string target = data2[0];
-                            string msg = data2[1];
-
-                            if (!mainform.UserByNameDict.ContainsKey(target))
-                            {
-                                SW.WriteLine("<whispers>귓속말 할 상대가 없습니다.</whispers>");
-                            }
-                            else
-                            {
-                                mainform.UserByNameDict[target].SW.WriteLine("<whispers>" + UserName + " : " + msg + "</whispers>");
-                                mainform.UserByNameDict[target].SW.Flush();
-                                msg = UserName + " -> " + target + " : " + msg;
-                                mainform.write_log(msg);
-                            }
-                            SW.Flush();
-                        }
-
-                        // 나머지는 다 방송함
-                        else if (!string.IsNullOrEmpty(GetMessage))
-                        {
-                            string[] co1 = { ">" };
-                            String[] d1 = GetMessage.Split(co1, StringSplitOptions.RemoveEmptyEntries);
-                            String tag = d1[0] + ">";
-
-                            if (sd.packetMessageDict.ContainsKey(tag))
-                            {
-                                mainform.Invoke((MethodInvoker)(() => mainform.Packet(GetMessage, UserCode)));
-                            }
-                            else if (sd.mapPacketMessageDict.ContainsKey(tag))
-                            {
-                                mainform.Invoke((MethodInvoker)(() => mainform.Map_Packet(GetMessage, last_map_id, UserCode)));
-                            }
+                            SendMessageWithTag("Drop", msg2);
                         }
                     }
-                    catch (Exception e)
+                    break;
+                case "item_summon":
                     {
-                        //MessageBox.Show(e.ToString());
-                        if (client.Connected)
+                        string[] temp = { "," };
+                        String[] data2 = body.Split(temp, StringSplitOptions.RemoveEmptyEntries);
+
+                        string target = data2[0];
+                        string x = data2[1];
+                        string y = data2[2];
+
+                        if (!mainForm.UserByNameDict.ContainsKey(target)) return;
+                        mainForm.UserByNameDict[target].SendMessageWithTag(tag, x + "," + y);
+                    }
+                    break;
+                case "map_name":
+                    {
+                        systemDB.SaveMap(message);
+                        string[] temp = { "," };
+                        String[] data2 = body.Split(temp, StringSplitOptions.RemoveEmptyEntries);
+
+                        int map_id = int.Parse(data2[0]);
+                        int flag_id = 0;
+                        if (!mainForm.MapUser2.ContainsKey(map_id)) // 해당 맵에 아무도 없었다면?
                         {
-                            mainform.write_log(e.ToString());
-                            SW.Close();
-                            SR.Close();
-                            client.Close();
-                            NS.Close();
-                            mainform.removethread(this);
-                            return;
+                            mainForm.MapUser2.Add(map_id, new List<UserThread>());
+                        }
+
+                        if (mainForm.MapUser2[map_id].Count == 0) flag_id = 1;
+                        else flag_id = 0;
+                        SendMessageWithTag("map_player", flag_id.ToString());
+
+                        mainForm.MapUser2[map_id].Add(this);
+                        mainForm.removeMapUser(lastMapId, this); // 이전에 있었던 리스트에서 제거함
+
+                        lastMapId = map_id;
+                        mapName = systemData.SendMap(lastMapId);
+                        mainForm.PlayerCount();
+                    }
+                    break;
+                case "9":
+                    CloseClient();
+                    break;
+                case "party_switch":
+                    {
+                        // 스위치 id, 스위치 상태, 맵 id
+                        string[] temp = { "," };
+                        String[] data2 = body.Split(temp, StringSplitOptions.RemoveEmptyEntries);
+                        mainForm.switch_send(data2[0], data2[1], int.Parse(data2[2]));
+                    }
+                    break;
+                case "party_quest_check":
+                    {
+                        int map_id;
+                        if (!int.TryParse(body, out map_id)) return;
+                        
+                        int[] check = systemData.checkPartyQuest(map_id);
+                        if (check[0] == 0) return;
+
+                        SendMessageWithTag(tag, check[0] + "," + check[1]);
+                    }
+                    break;
+                case "ship_time_check":
+                    SendMessageWithTag(tag, mainForm.now_ship_target().ToString());
+                    break;
+                case "monster_cooltime_reset":
+                    {
+                        // 스위치 id, 스위치 상태, 맵 id
+                        string[] temp = { "," };
+                        String[] data2 = body.Split(temp, StringSplitOptions.RemoveEmptyEntries);
+                        if (data2.Length >= 2)
+                            mainForm.monster_cooltime_reset(int.Parse(data2[0]), int.Parse(data2[1]));
+                        else
+                            mainForm.monster_cooltime_reset(int.Parse(data2[0]));
+                    }
+                    break;
+
+                case "party_move":
+                    {
+                        mainForm.Map_Packet(tag, body, lastMapId);
+                    }
+                    break;
+                case "whispers":
+                    {
+                        string[] temp = { "," };
+                        String[] data2 = body.Split(temp, StringSplitOptions.RemoveEmptyEntries);
+
+                        string target = data2[0];
+                        string ms = data2[1];
+
+                        if (!mainForm.UserByNameDict.ContainsKey(target))
+                        {
+                            SendMessageWithTag(tag, "귓속말 할 상대가 없습니다.");
+                        }
+                        else
+                        {
+                            mainForm.UserByNameDict[target].SendMessageWithTag(tag, userName + " : " + ms);
+                            ms = userName + " -> " + target + " : " + ms;
+                            mainForm.write_log(ms);
                         }
                     }
-                }
-                // 연결 종료
-                SW.Close();
-                SR.Close();
-                client.Close();
-                NS.Close();
-                mainform.removethread(this);
+                    break;
+                case "party_req":
+                    {
+                        Dictionary<string, string> dict = ParseKeyValueData(body);
+                        string target = dict["target"];
+                        string list = dict["list"];
+                        string leader = dict["leader"];
+                        string msg = $"list:{list}|leader:{leader}|name:{userName}";
+
+                        if (mainForm.UserByNameDict.ContainsKey(target))
+                        {
+                            mainForm.UserByNameDict[target].SendMessageWithTag(tag, msg);
+                            SendMessageWithTag("console_msg", target + "님을 파티에 초대 했습니다.");
+                        }
+                        else
+                        {
+                            SendMessageWithTag("console_msg", target + "님을 파티에 초대 할 수 없습니다.");
+                        }
+                    }
+                    break;
+                default:
+                    {
+                        string check = "<" + tag + ">";
+                        if (systemData.packetMessageDict.ContainsKey(check)) mainForm.Packet(tag, body, userCode);
+                        else if (systemData.mapPacketMessageDict.ContainsKey(check)) mainForm.Map_Packet(tag, body, lastMapId, userCode);
+                    }
+                    break;
+            }
+        }
+
+        private void HandleLogin(string tag, string body)
+        {
+            string loginResult = systemDB.Login(body);
+            string[] loginData = loginResult.Split(',');
+            int resultCode = int.Parse(loginData[2]);
+
+            bool isDuplicate = mainForm.Checkid(loginData[1]);
+            
+            if (isDuplicate)
+            {
+                SendMessageWithTag(tag, "al,1"); // Already logged in
                 return;
             }
+            
+            if (resultCode == 0) SendMessageWithTag(tag, "wu,1"); // Wrong username
+            else if (resultCode == 1) SendMessageWithTag(tag, "wp,1"); // Wrong password
+            else if (resultCode == 2) CompleteLogin(loginData);
         }
 
-        public String splitTag(String tag, String data)
+        private void CompleteLogin(string[] loginData)
         {
-            string[] co1 = { "<" + tag + ">" };
-            String[] d1 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
+            if (mainForm.UserByNameDict.Count > mainForm.max_user_name)
+            {
+                SendMessage("<server_msg>서버 유저 수 제한입니다. 다음에 시도해주세요.</server_msg>");
+                return;
+            }
 
-            string[] co2 = { "</" + tag + ">" };
-            String[] d2 = d1[0].Split(co2, StringSplitOptions.RemoveEmptyEntries);
+            userName = loginData[0];
+            userId = loginData[1];
+            mainForm.UserByNameDict[userName] = this;
+            SendMessageWithTag("login", "allow," + userName);
+            SendMessageWithTag("server_msg", "흑부엉의 바람의나라에 오신 것을 환영합니다.");
+        }
 
-            return d2[0];
+        private void HandleVersionCheck(string tag, string body)
+        {
+            if (body != mainForm.version)
+            {
+                SendMessageWithTag("over", "버전이 다릅니다.");
+            }
+            else
+            {
+                mainForm.write_log("카운트다운 시작");
+                versionCheckTimer.Start();
+                SendMessageWithTag(tag, mainForm.version); // 5초 내에 응답하지 않으면 퇴출
+                SendMessageWithTag("timer_v", "");
+            }
+        }
+
+        private void HandleEvent(string tag, string body)
+        {
+            switch(tag)
+            {
+                case "exp_event":
+                    if (mainForm.exe_event > 0) SendMessageWithTag(tag, mainForm.exe_event.ToString());
+                    break;
+                case "drop_event":
+                    if (mainForm.drop_event > 0) SendMessageWithTag(tag, mainForm.drop_event.ToString());
+                    break;
+            }
+        }
+
+        private void HandleReqMonster(string tag, string body)
+        {
+            if (!systemData.monster_data.ContainsKey(lastMapId))
+            {
+                SendMessageWithTag(tag, lastMapId.ToString());
+                return;
+            }
+
+            var da = systemData.monster_data[lastMapId].Values;
+            string msg = "";
+            foreach (var d in da)
+            {
+                // 객체의 타입을 가져옴
+                Type type = d.GetType();
+
+                foreach (var field in type.GetFields())
+                {
+                    object value = field.GetValue(d); // 필드의 값 가져오기
+                    msg += $"{field.Name}:{value}|";
+                }
+                SendMessageWithTag(tag, msg);
+            }
+        }
+
+
+
+        public void SendMessage(string message)
+        {
+            this.SW.WriteLine(message);
+            this.SW.Flush();
+        }
+
+        public void SendMessage(string message, StreamWriter sw)
+        {
+            sw.WriteLine(message);
+            sw.Flush();
+        }
+
+        public void SendMessageWithTag(string tag, string body)
+        {
+            string startTag = "<" + tag + ">";
+            string endTag = "</" + tag + ">";
+            string message = startTag + body + endTag;
+            this.SW.WriteLine(message);
+            this.SW.Flush();
+        }
+
+        public void SendMessageWithTag(string tag, string body, StreamWriter sw)
+        {
+            string startTag = "<" + tag + ">";
+            string endTag = "</" + tag + ">";
+            string message = startTag + body + endTag;
+            sw.WriteLine(message);
+            sw.Flush();
+        }
+
+        private void SendAndClose(string message)
+        {
+            SendMessage(message);
+            CloseClient();
+        }
+
+        public void CloseClient()
+        {
+            try
+            {
+                mainForm.removethread(this);
+                userCode = "*null*";
+
+                SW?.Dispose();
+                SR?.Dispose();
+                NS?.Dispose();
+                client?.Close();  // IDisposable이 아닌 경우에도 처리
+                thread?.Join();
+            }
+            catch (Exception ex)
+            {
+                mainForm.write_log(ex.ToString());
+            }
+        }
+
+        public string splitTag(string tag, string data)
+        {
+            string startTag = "<" + tag + ">";
+            string endTag = "</" + tag + ">";
+
+            int startIndex = data.IndexOf(startTag) + startTag.Length;
+            int endIndex = data.IndexOf(endTag);
+
+            return data.Substring(startIndex, endIndex - startIndex);
         }
 
         public Dictionary<string, string> ParseKeyValueData(string data)
         {
             var result = new Dictionary<string, string>();
+            var pairs = data.Split('|');
 
-            // 주어진 문자열을 "|"을 기준으로 분할하여 각 키:값 쌍을 처리합니다.
-            string[] pairs = data.Split('|');
-            foreach (string pair in pairs)
+            foreach (var pair in pairs)
             {
-                // 각 키:값 쌍을 ":"을 기준으로 분할하여 키와 값을 추출합니다.
-                string[] keyValue = pair.Split(':');
-
-                // 키와 값을 딕셔너리에 추가합니다.
+                var keyValue = pair.Split(':');
                 if (keyValue.Length == 2)
                 {
-                    result.Add(keyValue[0], keyValue[1]);
+                    result[keyValue[0]] = keyValue[1];
                 }
             }
 

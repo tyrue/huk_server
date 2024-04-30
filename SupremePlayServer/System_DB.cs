@@ -22,22 +22,22 @@ namespace SupremePlayServer
             "CharSet=utf8;";
 
 
+        
         #region 회원가입
 
-        public void Registeration(NetworkStream NS, String data)
+        public void Registeration(StreamWriter sw, string tag, string body)
         {
             try
             {
                 // resultcode  // 0 : 아이디 없음 1 : 아이디 이미 있음 2 : 닉네임 이미 있음
                 int resultcode = 0;
-                StreamWriter SW = new StreamWriter(NS, Encoding.UTF8);
                 String[] d1;
 
                 using (MySqlConnection conn = new MySqlConnection(DBInfo))
                 {
                     // get Data
                     string[] co = { "," };
-                    d1 = splitTag("regist", data).Split(co, StringSplitOptions.RemoveEmptyEntries);
+                    d1 = body.Split(co, StringSplitOptions.RemoveEmptyEntries);
 
                     // DB Connection
                     conn.Open();
@@ -63,38 +63,26 @@ namespace SupremePlayServer
                     conn.Close();
                 }
 
-                // Send Message To Client
-                if (NS != null)
+                // No Exist nickname & id
+                if (resultcode == 0)
                 {
-                    // No Exist nickname & id
-                    if (resultcode == 0)
+                    using (MySqlConnection conn = new MySqlConnection(DBInfo))
                     {
-                        using (MySqlConnection conn = new MySqlConnection(DBInfo))
-                        {
-                            // DB Connection
-                            conn.Open();
+                        // DB Connection
+                        conn.Open();
 
-                            string sql = "INSERT INTO user VALUES('" + d1[0] + "', '" + d1[1] + "', '" + d1[2] + "', now())";
-                            MySqlCommand cmd = new MySqlCommand(sql, conn);
-                            cmd.ExecuteNonQuery();
-                            SW.WriteLine("<regist>success</regist>");
-                        }
+                        string sql = "INSERT INTO user VALUES('" + d1[0] + "', '" + d1[1] + "', '" + d1[2] + "', now())";
+                        MySqlCommand cmd = new MySqlCommand(sql, conn);
+                        cmd.ExecuteNonQuery();
+                        SendMessageWithTag(tag, "success", sw);
                     }
-
-                    // Already Exist Id
-                    else if (resultcode == 1)
-                        SW.WriteLine("<regist>wi</regist>");
-
-                    // Already Exist nickname
-                    else if (resultcode == 2)
-                        SW.WriteLine("<regist>wn</regist>");
-
-                    SW.Flush();
                 }
+                else if (resultcode == 1) SendMessageWithTag(tag, "wi", sw); // Already Exist Id
+                else if (resultcode == 2) SendMessageWithTag(tag, "wn", sw); // Already Exist nickname
             }
             catch (Exception e)
             {
-                mainform.write_log(e.ToString());
+                mainForm.write_log(e.ToString());
             }
         }
 
@@ -103,7 +91,7 @@ namespace SupremePlayServer
 
         #region 로그인
 
-        public String Login(String data)
+        public String Login(String message)
         {
             String UserName = "*null*,*null*";
 
@@ -115,17 +103,13 @@ namespace SupremePlayServer
                 using (MySqlConnection conn = new MySqlConnection(DBInfo))
                 {
                     // get Data
-                    String[] co1 = { "<login " };
-                    String[] d1 = data.Split(co1, StringSplitOptions.RemoveEmptyEntries);
-
-                    String[] dd = d1[0].Split('>');
-
-                    String[] co2 = { "</login" };
-                    String[] ddd = dd[1].Split(co2, StringSplitOptions.RemoveEmptyEntries);
+                    String[] data = message.Split('|');
+                    string id = data[0];
+                    string pw = data[1];
 
                     // DB Connection
                     conn.Open();
-                    string sql = "SELECT* FROM user where id = '" + dd[0] + "'";
+                    string sql = "SELECT* FROM user where id = '" + id + "'";
 
                     // Mysql Connection
                     MySqlCommand cmd = new MySqlCommand(sql, conn);
@@ -133,9 +117,9 @@ namespace SupremePlayServer
                     while (rdr.Read())
                     {
                         resultcode = 1;
-                        if (rdr["password"].ToString().Equals(ddd[0]))
+                        if (rdr["password"].ToString().Equals(pw))
                         {
-                            UserName = rdr["nickname"].ToString() + "," + dd[0];
+                            UserName = rdr["nickname"].ToString() + "," + id;
                             resultcode = 2;
                             break;
                         }
@@ -148,7 +132,7 @@ namespace SupremePlayServer
             }
             catch (Exception e)
             {
-                mainform.write_log(e.ToString());
+                mainForm.write_log(e.ToString());
             }
 
             return UserName;
@@ -164,13 +148,10 @@ namespace SupremePlayServer
 
             try
             {
-                pkdata = splitTag("userdata", pkdata); // "userdata" 태그 분리
-
                 Dictionary<string, string> dataDict = ParseKeyValueData(pkdata); // 키:값 형식 데이터 파싱
-
-                if (!dataDict.ContainsKey("nickname") || string.IsNullOrEmpty(dataDict["nickname"]))
+                if (!dataDict.ContainsKey("nickname") || string.IsNullOrEmpty(dataDict["nickname"])) 
                     return;
-
+                
                 using (MySqlConnection conn = new MySqlConnection(DBInfo))
                 {
                     conn.Open();
@@ -206,6 +187,7 @@ namespace SupremePlayServer
                     }
                     else // 존재하지 않는 경우, 새로운 레코드 삽입
                     {
+                        dataDict.Add("id", userId);
                         string insertQuery = $"INSERT INTO userinfo ({string.Join(", ", dataDict.Keys)}) " +
                                              $"VALUES ('{string.Join("', '", dataDict.Values)}')";
                         MySqlCommand insertCmd = new MySqlCommand(insertQuery, conn);
@@ -217,7 +199,7 @@ namespace SupremePlayServer
             }
             catch (Exception e)
             {
-                mainform.write_log(e.ToString()); // 예외 발생 시 로그 출력
+                mainForm.write_log(e.ToString()); // 예외 발생 시 로그 출력
             }
         }
 
@@ -227,12 +209,10 @@ namespace SupremePlayServer
 
         #region 유저 데이터 전송
 
-        public void SendData(NetworkStream NS, String userid)
+        public void SendData(StreamWriter sw, String userid)
         {
             try
             {
-                StreamWriter SW = new StreamWriter(NS, Encoding.UTF8);
-
                 using (MySqlConnection conn = new MySqlConnection(DBInfo))
                 {
                     // DB Connection
@@ -248,19 +228,17 @@ namespace SupremePlayServer
                     {
                         for (int i = 0; i < rdr.FieldCount; i++)
                         {
-                            SW.WriteLine("<dataload>" + rdr.GetName(i) + ":" + rdr[i].ToString() + "</dataload>");
+                            SendMessageWithTag("dataload", rdr.GetName(i) + ":" + rdr[i].ToString(), sw);
                         }
-                        SW.WriteLine("<dataLoadEnd>ok</dataLoadEnd>");
+                        SendMessageWithTag("dataLoadEnd", "ok", sw);
                     }
-
-                    SW.Flush();
                     rdr.Close();
                     conn.Close();
                 }
             }
             catch (Exception e)
             {
-                mainform.write_log(e.ToString());
+                mainForm.write_log(e.ToString());
             }
         }
         #endregion
@@ -293,11 +271,11 @@ namespace SupremePlayServer
             }
             catch (Exception e)
             {
-                if(mainform == null)
+                if(mainForm == null)
                 {
                     MessageBox.Show(e.ToString());
                 }
-                mainform.write_log(e.ToString());
+                mainForm.write_log(e.ToString());
                 return null;
             }
         }
@@ -381,7 +359,7 @@ namespace SupremePlayServer
 
             catch (Exception e)
             {
-                mainform.write_log(e.ToString());
+                mainForm.write_log(e.ToString());
             }
         }
         #endregion
