@@ -30,7 +30,7 @@ namespace SupremePlayServer
         public Thread thread;
 
         private System.Timers.Timer versionCheckTimer;
-
+        public PartyManger partyManger;
        
         public void StartClient(TcpClient clientSocket)
         {
@@ -44,6 +44,7 @@ namespace SupremePlayServer
             systemData = mainForm.sd;
             systemDB = mainForm.systemDB;
             userCode = new Random().Next(0, 9999999).ToString();
+            partyManger = new PartyManger(this);
 
             client = clientSocket;
             NS = client.GetStream();
@@ -71,7 +72,8 @@ namespace SupremePlayServer
             if (!isVersionValid)
             {
                 mainForm.write_log("version_false");
-                SendAndClose("<over>버전이 다릅니다.</over>");
+                SendMessageWithTag("over", "버전이 다릅니다.");
+                CloseClient();
             }
             else
             {
@@ -129,7 +131,7 @@ namespace SupremePlayServer
                     HandleLogin(tag, body);
                     break;
                 case "regist":
-                    systemDB.Registeration(SW, tag, body);
+                    systemDB.Registeration(this, tag, body);
                     break;
                 case "versione":
                     HandleVersionCheck(tag, body);
@@ -162,7 +164,7 @@ namespace SupremePlayServer
                     mainForm.Map_Packet("5", userCode + "," + body, lastMapId, userCode);
                     break;
                 case "dtloadreq":
-                    systemDB.SendData(SW, userId);
+                    systemDB.SendData(this, userId);
                     break;
                 case "monster_save":
                     systemData.SaveMonster(body);
@@ -213,7 +215,7 @@ namespace SupremePlayServer
                         Dictionary<string, string> dict = ParseKeyValueData(body);
                         string target = dict["target_name"];
                         if (!mainForm.UserByNameDict.ContainsKey(target)) return;
-                        mainForm.UserByNameDict[target].SendMessage(message);
+                        mainForm.UserByNameDict[target].SendMessageWithTag(tag, body);
                     }
                     break;
                 case "Drop":
@@ -284,6 +286,38 @@ namespace SupremePlayServer
                 case "9":
                     CloseClient();
                     break;
+
+                // 파티 관련
+                case "party_create":
+                    partyManger.createParty();
+                    break;
+
+                case "party_end":
+                    partyManger.endParty();
+                    break;
+
+                case "party_invite":
+                    {
+                        Dictionary<string, string> dict = ParseKeyValueData(body);
+                        string target = dict["target"];
+                        partyManger.inviteParty(target);
+                    }
+                    break;
+
+                case "party_accept":
+                    {
+                        var target = mainForm.UserByNameDict[body];
+                        target.partyManger.acceptParty(userName);
+                    }
+                    break;
+
+                case "party_refuse":
+                    {
+                        var target = mainForm.UserByNameDict[body];
+                        target.partyManger.refuseParty(userName);
+                    }
+                    break;
+
                 case "party_switch":
                     {
                         // 스위치 id, 스위치 상태, 맵 id
@@ -303,6 +337,49 @@ namespace SupremePlayServer
                         SendMessageWithTag(tag, check[0] + "," + check[1]);
                     }
                     break;
+                case "party_move":
+                    {
+                        SendMessageToPartyMembers(
+                            (party, member) => member.lastMapId == this.lastMapId,
+                            (party, member) => member.SendMessageWithTag(tag, body)
+                            ); 
+                    }
+                    break;
+                case "party_message":
+                    {
+                        var dict = ParseKeyValueData(body);
+                        string className = dict["class"];
+                        string text = dict["text"];
+                        string msg = $"(파티) {userName}({className}) : {text}";
+
+                        SendMessageToPartyMembers(
+                            (party, member) => !party.Equals(userName),
+                            (party, member) => member.SendMessageWithTag(tag, msg)
+                            );
+                    }
+                    break;
+                case "party_heal":
+                    {
+                        var dict = ParseKeyValueData(body);
+                        string id = dict["id"];
+                        string value = dict["value"];
+                        string msg = $"{userName} {id} {value}";
+
+                        SendMessageToPartyMembers(
+                            (party, member) => !party.Equals(userName),
+                            (party, member) => member.SendMessageWithTag(tag, msg)
+                            );
+                    }
+                    break;
+
+                case "party_gain":
+                    SendMessageToPartyMembers(
+                           (party, member) => !party.Equals(userName) && (member.lastMapId == this.lastMapId),
+                           (party, member) => member.SendMessageWithTag(tag, body)
+                           );
+                    break;
+
+
                 case "ship_time_check":
                     SendMessageWithTag(tag, mainForm.now_ship_target().ToString());
                     break;
@@ -318,11 +395,7 @@ namespace SupremePlayServer
                     }
                     break;
 
-                case "party_move":
-                    {
-                        mainForm.Map_Packet(tag, body, lastMapId);
-                    }
-                    break;
+               
                 case "whispers":
                     {
                         string[] temp = { "," };
@@ -334,34 +407,17 @@ namespace SupremePlayServer
                         if (!mainForm.UserByNameDict.ContainsKey(target))
                         {
                             SendMessageWithTag(tag, "귓속말 할 상대가 없습니다.");
+                            return;
                         }
-                        else
-                        {
-                            mainForm.UserByNameDict[target].SendMessageWithTag(tag, userName + " : " + ms);
-                            ms = userName + " -> " + target + " : " + ms;
-                            mainForm.write_log(ms);
-                        }
-                    }
-                    break;
-                case "party_req":
-                    {
-                        Dictionary<string, string> dict = ParseKeyValueData(body);
-                        string target = dict["target"];
-                        string list = dict["list"];
-                        string leader = dict["leader"];
-                        string msg = $"list:{list}|leader:{leader}|name:{userName}";
 
-                        if (mainForm.UserByNameDict.ContainsKey(target))
-                        {
-                            mainForm.UserByNameDict[target].SendMessageWithTag(tag, msg);
-                            SendMessageWithTag("console_msg", target + "님을 파티에 초대 했습니다.");
-                        }
-                        else
-                        {
-                            SendMessageWithTag("console_msg", target + "님을 파티에 초대 할 수 없습니다.");
-                        }
+                        string msg = $"(귓속말) {userName} : {ms}";
+
+                        mainForm.UserByNameDict[target].SendMessageWithTag(tag, msg);
+                        ms = $"{userName}->{target}:{ms}";
+                        mainForm.write_log(ms);
                     }
                     break;
+               
                 default:
                     {
                         string check = "<" + tag + ">";
@@ -395,7 +451,7 @@ namespace SupremePlayServer
         {
             if (mainForm.UserByNameDict.Count > mainForm.max_user_name)
             {
-                SendMessage("<server_msg>서버 유저 수 제한입니다. 다음에 시도해주세요.</server_msg>");
+                SendMessageWithTag("server_msg", "서버 유저 수 제한입니다. 다음에 시도해주세요.");
                 return;
             }
 
@@ -458,20 +514,6 @@ namespace SupremePlayServer
             }
         }
 
-
-
-        public void SendMessage(string message)
-        {
-            this.SW.WriteLine(message);
-            this.SW.Flush();
-        }
-
-        public void SendMessage(string message, StreamWriter sw)
-        {
-            sw.WriteLine(message);
-            sw.Flush();
-        }
-
         public void SendMessageWithTag(string tag, string body)
         {
             string startTag = "<" + tag + ">";
@@ -481,20 +523,26 @@ namespace SupremePlayServer
             this.SW.Flush();
         }
 
-        public void SendMessageWithTag(string tag, string body, StreamWriter sw)
+        public void SendConsoleMessage(string body)
         {
-            string startTag = "<" + tag + ">";
-            string endTag = "</" + tag + ">";
-            string message = startTag + body + endTag;
-            sw.WriteLine(message);
-            sw.Flush();
+            SendMessageWithTag("console_msg", body);
         }
 
-        private void SendAndClose(string message)
+        private void SendMessageToPartyMembers(Func<string, UserThread, bool> condition, Action<string, UserThread> action)
         {
-            SendMessage(message);
-            CloseClient();
+            foreach (var party in partyManger.partyMembers)
+            {
+                if (!mainForm.UserByNameDict.ContainsKey(party)) continue;
+
+                var member = mainForm.UserByNameDict[party];
+
+                if (condition(party, member))
+                {
+                    action(party, member);
+                }
+            }
         }
+
 
         public void CloseClient()
         {

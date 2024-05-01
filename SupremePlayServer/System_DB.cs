@@ -25,7 +25,7 @@ namespace SupremePlayServer
         
         #region 회원가입
 
-        public void Registeration(StreamWriter sw, string tag, string body)
+        public void Registeration(UserThread user, string tag, string body)
         {
             try
             {
@@ -74,11 +74,11 @@ namespace SupremePlayServer
                         string sql = "INSERT INTO user VALUES('" + d1[0] + "', '" + d1[1] + "', '" + d1[2] + "', now())";
                         MySqlCommand cmd = new MySqlCommand(sql, conn);
                         cmd.ExecuteNonQuery();
-                        SendMessageWithTag(tag, "success", sw);
+                        user.SendMessageWithTag(tag, "success");
                     }
                 }
-                else if (resultcode == 1) SendMessageWithTag(tag, "wi", sw); // Already Exist Id
-                else if (resultcode == 2) SendMessageWithTag(tag, "wn", sw); // Already Exist nickname
+                else if (resultcode == 1) user.SendMessageWithTag(tag, "wi"); // Already Exist Id
+                else if (resultcode == 2) user.SendMessageWithTag(tag, "wn"); // Already Exist nickname
             }
             catch (Exception e)
             {
@@ -209,7 +209,7 @@ namespace SupremePlayServer
 
         #region 유저 데이터 전송
 
-        public void SendData(StreamWriter sw, String userid)
+        public void SendData(UserThread user, String userid)
         {
             try
             {
@@ -228,9 +228,9 @@ namespace SupremePlayServer
                     {
                         for (int i = 0; i < rdr.FieldCount; i++)
                         {
-                            SendMessageWithTag("dataload", rdr.GetName(i) + ":" + rdr[i].ToString(), sw);
+                            user.SendMessageWithTag("dataload", rdr.GetName(i) + ":" + rdr[i].ToString());
                         }
-                        SendMessageWithTag("dataLoadEnd", "ok", sw);
+                        user.SendMessageWithTag("dataLoadEnd", "ok");
                     }
                     rdr.Close();
                     conn.Close();

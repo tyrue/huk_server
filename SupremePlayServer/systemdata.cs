@@ -419,15 +419,14 @@ namespace SupremePlayServer
             int[] data = new int[2]; // sw_id, on/off
             try
             {
-                if (party_quest_map_id.ContainsKey(id))
-                {
-                    int map_id = party_quest_map_id[id][0];
-                    data[0] = party_quest_map_id[id][1]; // 스위치 id
+                if (!party_quest_map_id.ContainsKey(id)) return data;
+                
+                int map_id = party_quest_map_id[id][0];
+                data[0] = party_quest_map_id[id][1]; // 스위치 id
 
-                    if (!mainForm.MapUser2.ContainsKey(map_id)) data[1] = 0;
-                    else if (mainForm.MapUser2[map_id].Count <= 0) data[1] = 0;
-                    else data[1] = 1; // 만약 해당 맵에 사람이 있다면 파티 퀘스트 체크 스위치 
-                }
+                if (!mainForm.MapUser2.ContainsKey(map_id)) data[1] = 0;
+                else if (mainForm.MapUser2[map_id].Count <= 0) data[1] = 0;
+                else data[1] = 1; // 만약 해당 맵에 사람이 있다면 파티 퀘스트 체크 스위치 
             }
             catch(Exception e)
             {
