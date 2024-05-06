@@ -30,8 +30,9 @@ namespace SupremePlayServer
         public Thread thread;
 
         private System.Timers.Timer versionCheckTimer;
-        public PartyManger partyManger;
-       
+        public PartyManager partyManger;
+        public TradeManager tradeManager;
+
         public void StartClient(TcpClient clientSocket)
         {
             InitializeClient(clientSocket);
@@ -44,7 +45,8 @@ namespace SupremePlayServer
             systemData = mainForm.sd;
             systemDB = mainForm.systemDB;
             userCode = new Random().Next(0, 9999999).ToString();
-            partyManger = new PartyManger(this);
+            partyManger = new PartyManager(this);
+            tradeManager = new TradeManager(this);
 
             client = clientSocket;
             NS = client.GetStream();
@@ -287,6 +289,32 @@ namespace SupremePlayServer
                     CloseClient();
                     break;
 
+                // 교환 관련
+                case "trade_invite":
+                    tradeManager.inviteTrade(body);
+                    break;
+                case "trade_addItem":
+                    tradeManager.addItem(ParseKeyValueData(body));
+                    break;
+                case "trade_removeItem":
+                    tradeManager.removeItem(int.Parse(body));
+                    break;
+                case "trade_ready":
+                    tradeManager.readyTrade();
+                    break;
+                case "trade_cancel":
+                    tradeManager.cancelTrade();
+                    break;
+                case "trade_accept":
+                    tradeManager.acceptTrade();
+                    break;
+                case "trade_refuse":
+                    tradeManager.refuseTrade();
+                    break;
+
+
+
+
                 // 파티 관련
                 case "party_create":
                     partyManger.createParty();
@@ -306,15 +334,13 @@ namespace SupremePlayServer
 
                 case "party_accept":
                     {
-                        var target = mainForm.UserByNameDict[body];
-                        target.partyManger.acceptParty(userName);
+                        partyManger.acceptParty();
                     }
                     break;
 
                 case "party_refuse":
                     {
-                        var target = mainForm.UserByNameDict[body];
-                        target.partyManger.refuseParty(userName);
+                        partyManger.refuseParty();
                     }
                     break;
 
@@ -340,8 +366,8 @@ namespace SupremePlayServer
                 case "party_move":
                     {
                         SendMessageToPartyMembers(
-                            (party, member) => member.lastMapId == this.lastMapId,
-                            (party, member) => member.SendMessageWithTag(tag, body)
+                            (member) => member.lastMapId == this.lastMapId,
+                            (member) => member.SendMessageWithTag(tag, body)
                             ); 
                     }
                     break;
@@ -353,8 +379,8 @@ namespace SupremePlayServer
                         string msg = $"(파티) {userName}({className}) : {text}";
 
                         SendMessageToPartyMembers(
-                            (party, member) => !party.Equals(userName),
-                            (party, member) => member.SendMessageWithTag(tag, msg)
+                            (member) => !member.Equals(userName),
+                            (member) => member.SendMessageWithTag(tag, msg)
                             );
                     }
                     break;
@@ -366,16 +392,16 @@ namespace SupremePlayServer
                         string msg = $"{userName} {id} {value}";
 
                         SendMessageToPartyMembers(
-                            (party, member) => !party.Equals(userName),
-                            (party, member) => member.SendMessageWithTag(tag, msg)
+                            (member) => !member.Equals(userName),
+                            (member) => member.SendMessageWithTag(tag, msg)
                             );
                     }
                     break;
 
                 case "party_gain":
                     SendMessageToPartyMembers(
-                           (party, member) => !party.Equals(userName) && (member.lastMapId == this.lastMapId),
-                           (party, member) => member.SendMessageWithTag(tag, body)
+                           (member) => !member.Equals(userName) && (member.lastMapId == this.lastMapId),
+                           (member) => member.SendMessageWithTag(tag, body)
                            );
                     break;
 
@@ -514,7 +540,7 @@ namespace SupremePlayServer
             }
         }
 
-        public void SendMessageWithTag(string tag, string body)
+        public void SendMessageWithTag(string tag, string body = "")
         {
             string startTag = "<" + tag + ">";
             string endTag = "</" + tag + ">";
@@ -528,17 +554,15 @@ namespace SupremePlayServer
             SendMessageWithTag("console_msg", body);
         }
 
-        private void SendMessageToPartyMembers(Func<string, UserThread, bool> condition, Action<string, UserThread> action)
+        private void SendMessageToPartyMembers(Func<UserThread, bool> condition, Action<UserThread> action)
         {
-            foreach (var party in partyManger.partyMembers)
+            foreach (var member in partyManger.partyMembers)
             {
-                if (!mainForm.UserByNameDict.ContainsKey(party)) continue;
+                if (member == null) continue;
 
-                var member = mainForm.UserByNameDict[party];
-
-                if (condition(party, member))
+                if (condition(member))
                 {
-                    action(party, member);
+                    action(member);
                 }
             }
         }
