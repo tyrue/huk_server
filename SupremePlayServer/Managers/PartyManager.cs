@@ -138,6 +138,7 @@ namespace SupremePlayServer
             var target = inviter.partyManger;
             target.addMember(myUser);
             enterParty(target.partyMembers, target.leader);
+            inviter = null;
         }
 
         public void refuseParty()

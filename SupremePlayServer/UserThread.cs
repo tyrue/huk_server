@@ -313,8 +313,6 @@ namespace SupremePlayServer
                     break;
 
 
-
-
                 // 파티 관련
                 case "party_create":
                     partyManger.createParty();
@@ -333,15 +331,11 @@ namespace SupremePlayServer
                     break;
 
                 case "party_accept":
-                    {
-                        partyManger.acceptParty();
-                    }
+                    partyManger.acceptParty();
                     break;
 
                 case "party_refuse":
-                    {
-                        partyManger.refuseParty();
-                    }
+                    partyManger.refuseParty();
                     break;
 
                 case "party_switch":
@@ -379,7 +373,7 @@ namespace SupremePlayServer
                         string msg = $"(파티) {userName}({className}) : {text}";
 
                         SendMessageToPartyMembers(
-                            (member) => !member.Equals(userName),
+                            (member) => !member.Equals(this),
                             (member) => member.SendMessageWithTag(tag, msg)
                             );
                     }
@@ -392,7 +386,7 @@ namespace SupremePlayServer
                         string msg = $"{userName} {id} {value}";
 
                         SendMessageToPartyMembers(
-                            (member) => !member.Equals(userName),
+                            (member) => !member.Equals(this),
                             (member) => member.SendMessageWithTag(tag, msg)
                             );
                     }
@@ -400,7 +394,7 @@ namespace SupremePlayServer
 
                 case "party_gain":
                     SendMessageToPartyMembers(
-                           (member) => !member.Equals(userName) && (member.lastMapId == this.lastMapId),
+                           (member) => !member.Equals(this) && (member.lastMapId == this.lastMapId),
                            (member) => member.SendMessageWithTag(tag, body)
                            );
                     break;
