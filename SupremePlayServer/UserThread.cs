@@ -75,7 +75,7 @@ namespace SupremePlayServer
             {
                 mainForm.write_log("version_false");
                 SendMessageWithTag("over", "버전이 다릅니다.");
-                CloseClient();
+                CloseClient(true);
             }
             else
             {
@@ -109,6 +109,8 @@ namespace SupremePlayServer
             }
         }
 
+
+
         private void HandleMessage(string message)
         {
             string[] flag = { ">" };
@@ -121,7 +123,8 @@ namespace SupremePlayServer
             // 로그에 메시지 저장
             if (!string.IsNullOrEmpty(userName))
             {
-                if (!systemData.ignoreMessageDict.ContainsKey(tag)) mainForm.write_log_user(userName, message);
+                if (systemData.logMessageDict.ContainsKey($"<{tag}>")) 
+                    mainForm.write_log_user(userName, message);
             }
 
             switch(tag)
@@ -150,21 +153,44 @@ namespace SupremePlayServer
                 case "userdata":
                     systemDB.SaveData2(body, userId);
                     break;
+
                 case "exp_event":
                     HandleEvent(tag, body);
                     break;
                 case "drop_event":
                     HandleEvent(tag, body);
                     break;
-                case "chat":
-                    mainForm.Packet(tag, body);
+                case "exp_event_change":
+                    HandleEvent(tag, body);
                     break;
+                case "drop_event_change":
+                    HandleEvent(tag, body);
+                    break;
+
                 case "5":
                     mainForm.Packet("5", userCode + ","+ body, userCode);
                     break;
                 case "m5":
                     mainForm.Map_Packet("5", userCode + "," + body, lastMapId, userCode);
                     break;
+
+
+                case "give_admin":
+                    {
+                        UserThread target = mainForm.findMember(body);
+                        if (target == null) return;
+
+                        target.SendMessageWithTag(tag, body);
+                        break;
+                    }
+                case "remove_admin":
+                    {
+                        UserThread target = mainForm.findMember(body);
+                        if (target == null) return;
+
+                        target.SendMessageWithTag(tag, body);
+                        break;
+                    }
                 case "dtloadreq":
                     systemDB.SendData(this, userId);
                     break;
@@ -173,7 +199,7 @@ namespace SupremePlayServer
                     mainForm.Map_Packet(tag, body, lastMapId, userCode);
                     break;
                 case "enemy_dead":
-                    systemData.DeleteMonster(body);
+                    systemData.DeleteMonster(body, lastMapId);
                     mainForm.Map_Packet(tag, body, lastMapId, userCode);
                     break;
                 case "req_monster":
@@ -225,7 +251,7 @@ namespace SupremePlayServer
                     mainForm.Map_Packet(tag, body, lastMapId);
                     break;
                 case "Drop_Get":
-                    systemData.DelItem2(body);
+                    systemData.DelItem2(body, lastMapId);
                     mainForm.Map_Packet(tag, body, lastMapId);
                     break;
                 case "req_item":
@@ -266,27 +292,14 @@ namespace SupremePlayServer
                         string[] temp = { "," };
                         String[] data2 = body.Split(temp, StringSplitOptions.RemoveEmptyEntries);
 
-                        int map_id = int.Parse(data2[0]);
-                        int flag_id = 0;
-                        if (!mainForm.MapUser2.ContainsKey(map_id)) // 해당 맵에 아무도 없었다면?
-                        {
-                            mainForm.MapUser2.Add(map_id, new List<UserThread>());
-                        }
-
-                        if (mainForm.MapUser2[map_id].Count == 0) flag_id = 1;
-                        else flag_id = 0;
-                        SendMessageWithTag("map_player", flag_id.ToString());
-
-                        mainForm.MapUser2[map_id].Add(this);
-                        mainForm.removeMapUser(lastMapId, this); // 이전에 있었던 리스트에서 제거함
-
-                        lastMapId = map_id;
-                        mapName = systemData.SendMap(lastMapId);
-                        mainForm.PlayerCount();
+                        mapName = data2[1];
+                        int new_id = int.Parse(data2[0]);
+                        mainForm.editUserMap(this, new_id);
+                        lastMapId = new_id;
                     }
                     break;
                 case "9":
-                    CloseClient();
+                    CloseClient(true);
                     break;
 
                 // 교환 관련
@@ -311,7 +324,6 @@ namespace SupremePlayServer
                 case "trade_refuse":
                     tradeManager.refuseTrade();
                     break;
-
 
                 // 파티 관련
                 case "party_create":
@@ -373,7 +385,7 @@ namespace SupremePlayServer
                         string msg = $"(파티) {userName}({className}) : {text}";
 
                         SendMessageToPartyMembers(
-                            (member) => !member.Equals(this),
+                            (member) => true,
                             (member) => member.SendMessageWithTag(tag, msg)
                             );
                     }
@@ -386,7 +398,7 @@ namespace SupremePlayServer
                         string msg = $"{userName} {id} {value}";
 
                         SendMessageToPartyMembers(
-                            (member) => !member.Equals(this),
+                            (member) => !member.Equals(this) && (member.lastMapId == this.lastMapId),
                             (member) => member.SendMessageWithTag(tag, msg)
                             );
                     }
@@ -441,8 +453,16 @@ namespace SupremePlayServer
                 default:
                     {
                         string check = "<" + tag + ">";
-                        if (systemData.packetMessageDict.ContainsKey(check)) mainForm.Packet(tag, body, userCode);
-                        else if (systemData.mapPacketMessageDict.ContainsKey(check)) mainForm.Map_Packet(tag, body, lastMapId, userCode);
+                        if (systemData.packetMessageDict.ContainsKey(check))
+                        {
+                            if (systemData.packetMessageDict[check] == 0) mainForm.Packet(tag, body, userCode);
+                            else mainForm.Packet(tag, body);
+                        }
+                        else if (systemData.mapPacketMessageDict.ContainsKey(check))
+                        {
+                            if(systemData.mapPacketMessageDict[check] == 0) mainForm.Map_Packet(tag, body, lastMapId, userCode);
+                            else mainForm.Map_Packet(tag, body, lastMapId);
+                        }
                     }
                     break;
             }
@@ -471,15 +491,17 @@ namespace SupremePlayServer
         {
             if (mainForm.UserByNameDict.Count > mainForm.max_user_name)
             {
-                SendMessageWithTag("server_msg", "서버 유저 수 제한입니다. 다음에 시도해주세요.");
+                SendMessageWithTag("over", "서버 유저 수 제한입니다. 다음에 시도해주세요.");
                 return;
             }
 
             userName = loginData[0];
             userId = loginData[1];
             mainForm.UserByNameDict[userName] = this;
+            
             SendMessageWithTag("login", "allow," + userName);
             SendMessageWithTag("server_msg", "흑부엉의 바람의나라에 오신 것을 환영합니다.");
+            if(mainForm.isTest) SendMessageWithTag("server_msg", "현재 테스트 서버입니다.");
         }
 
         private void HandleVersionCheck(string tag, string body)
@@ -499,7 +521,8 @@ namespace SupremePlayServer
 
         private void HandleEvent(string tag, string body)
         {
-            switch(tag)
+            double num;
+            switch (tag)
             {
                 case "exp_event":
                     if (mainForm.exe_event > 0) SendMessageWithTag(tag, mainForm.exe_event.ToString());
@@ -507,14 +530,22 @@ namespace SupremePlayServer
                 case "drop_event":
                     if (mainForm.drop_event > 0) SendMessageWithTag(tag, mainForm.drop_event.ToString());
                     break;
+                case "exp_event_change":
+                    if (double.TryParse(body, out num))
+                        mainForm.exe_event_send(num);
+                    break;
+                case "drop_event_change":
+                    if (double.TryParse(body, out num))
+                        mainForm.drop_event_send(num);
+                    break;
             }
         }
-
+        
         private void HandleReqMonster(string tag, string body)
         {
             if (!systemData.monster_data.ContainsKey(lastMapId))
             {
-                SendMessageWithTag(tag, lastMapId.ToString());
+                SendMessageWithTag(tag, $"map_id:{lastMapId}");
                 return;
             }
 
@@ -536,9 +567,19 @@ namespace SupremePlayServer
 
         public void SendMessageWithTag(string tag, string body = "")
         {
+            // SW가 null이거나, 스트림이 닫혀 있으면 메시지를 보내지 않음
+            if (this.SW == null || !this.SW.BaseStream.CanWrite)
+            {
+                return;
+            }
+
+            if (mainForm.print_chat_tag.Contains(tag))
+                body = mainForm.abuse_filtering(body);
+
             string startTag = "<" + tag + ">";
             string endTag = "</" + tag + ">";
             string message = startTag + body + endTag;
+
             this.SW.WriteLine(message);
             this.SW.Flush();
         }
@@ -562,18 +603,33 @@ namespace SupremePlayServer
         }
 
 
-        public void CloseClient()
+        public void CloseClient(bool closeSwitch = false)
         {
             try
             {
-                mainForm.removethread(this);
-                userCode = "*null*";
+                lock (this)
+                {
+                    if (client.Connected && !closeSwitch)
+                    {
+                        NetListener();
+                        return;
+                    }
 
-                SW?.Dispose();
-                SR?.Dispose();
-                NS?.Dispose();
-                client?.Close();  // IDisposable이 아닌 경우에도 처리
-                thread?.Join();
+                    mainForm.removethread(this);
+                    userCode = "*null*";
+
+                    // 스트림과 네트워크 리소스를 올바른 순서로 해제
+                    NS?.Dispose(); // NetworkStream을 먼저 닫습니다.
+                    SW?.Dispose(); // StreamWriter와 StreamReader는 NetworkStream에 종속될 수 있습니다.
+                    SR?.Dispose();
+                    client?.Close();  // IDisposable이 아닌 경우에도 처리
+
+                    // 스레드 조인 (메인 UI 스레드에서 호출될 경우 주의)
+                    if (thread?.IsAlive == true)
+                    {
+                        thread?.Join(); // 스레드가 종료될 때까지 대기
+                    }
+                }                    
             }
             catch (Exception ex)
             {
@@ -589,7 +645,7 @@ namespace SupremePlayServer
             int startIndex = data.IndexOf(startTag) + startTag.Length;
             int endIndex = data.IndexOf(endTag);
 
-            return data.Substring(startIndex, endIndex - startIndex);
+            return data.Substring(startIndex, Math.Max(endIndex - startIndex, 0));
         }
 
         public Dictionary<string, string> ParseKeyValueData(string data)

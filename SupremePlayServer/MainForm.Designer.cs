@@ -82,31 +82,30 @@
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripStatusLabel1,
             this.toolStripStatusLabel2});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 457);
+            this.statusStrip1.Location = new System.Drawing.Point(0, 461);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(981, 26);
+            this.statusStrip1.Size = new System.Drawing.Size(981, 22);
             this.statusStrip1.TabIndex = 3;
             this.statusStrip1.Text = "접속자 :";
             // 
             // toolStripStatusLabel1
             // 
             this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
-            this.toolStripStatusLabel1.Size = new System.Drawing.Size(0, 20);
+            this.toolStripStatusLabel1.Size = new System.Drawing.Size(0, 17);
             // 
             // toolStripStatusLabel2
             // 
             this.toolStripStatusLabel2.Name = "toolStripStatusLabel2";
-            this.toolStripStatusLabel2.Size = new System.Drawing.Size(95, 20);
+            this.toolStripStatusLabel2.Size = new System.Drawing.Size(77, 17);
             this.toolStripStatusLabel2.Text = "접속자 수 : 0";
             // 
             // listBox1
             // 
-            this.listBox1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.listBox1.FormattingEnabled = true;
-            this.listBox1.ItemHeight = 20;
+            this.listBox1.ItemHeight = 15;
             this.listBox1.Location = new System.Drawing.Point(3, 3);
             this.listBox1.Name = "listBox1";
-            this.listBox1.Size = new System.Drawing.Size(222, 415);
+            this.listBox1.Size = new System.Drawing.Size(222, 409);
             this.listBox1.Sorted = true;
             this.listBox1.TabIndex = 4;
             this.listBox1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.ListBox1_MouseDown);
@@ -119,7 +118,7 @@
             this.label1.Font = new System.Drawing.Font("맑은 고딕", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(129)));
             this.label1.Location = new System.Drawing.Point(3, 16);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(89, 20);
+            this.label1.Size = new System.Drawing.Size(71, 15);
             this.label1.TabIndex = 6;
             this.label1.Text = "유저 리스트";
             // 
@@ -127,9 +126,9 @@
             // 
             this.label2.AutoSize = true;
             this.label2.Font = new System.Drawing.Font("맑은 고딕", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(129)));
-            this.label2.Location = new System.Drawing.Point(186, 16);
+            this.label2.Location = new System.Drawing.Point(237, 14);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(39, 20);
+            this.label2.Size = new System.Drawing.Size(31, 15);
             this.label2.TabIndex = 7;
             this.label2.Text = "채팅";
             // 
@@ -138,9 +137,9 @@
             this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(347, 11);
+            this.label3.Location = new System.Drawing.Point(347, 12);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(87, 20);
+            this.label3.Size = new System.Drawing.Size(70, 15);
             this.label3.TabIndex = 15;
             this.label3.Text = "현재 시간 : ";
             this.label3.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -151,13 +150,12 @@
             this.listBox2.Font = new System.Drawing.Font("맑은 고딕", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(129)));
             this.listBox2.FormattingEnabled = true;
             this.listBox2.HorizontalScrollbar = true;
-            this.listBox2.ItemHeight = 21;
+            this.listBox2.ItemHeight = 17;
             this.listBox2.Location = new System.Drawing.Point(3, 3);
             this.listBox2.Name = "listBox2";
             this.listBox2.SelectionMode = System.Windows.Forms.SelectionMode.None;
             this.listBox2.Size = new System.Drawing.Size(574, 384);
             this.listBox2.TabIndex = 5;
-            
             // 
             // radioButton_1
             // 
@@ -218,7 +216,6 @@
             this.radioButton_4.Text = "강퇴";
             this.radioButton_4.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             this.radioButton_4.UseVisualStyleBackColor = false;
-            
             // 
             // radioButton_5
             // 
@@ -239,7 +236,7 @@
             this.textBox1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.textBox1.Location = new System.Drawing.Point(3, 393);
             this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(574, 27);
+            this.textBox1.Size = new System.Drawing.Size(574, 23);
             this.textBox1.TabIndex = 29;
             this.textBox1.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.message_keyDown);
             // 
@@ -248,7 +245,7 @@
             this.textBox2.Dock = System.Windows.Forms.DockStyle.Fill;
             this.textBox2.Location = new System.Drawing.Point(113, 3);
             this.textBox2.Name = "textBox2";
-            this.textBox2.Size = new System.Drawing.Size(84, 27);
+            this.textBox2.Size = new System.Drawing.Size(84, 23);
             this.textBox2.TabIndex = 29;
             // 
             // label4
@@ -278,7 +275,7 @@
             this.exp_event_num.Dock = System.Windows.Forms.DockStyle.Fill;
             this.exp_event_num.Location = new System.Drawing.Point(92, 3);
             this.exp_event_num.Name = "exp_event_num";
-            this.exp_event_num.Size = new System.Drawing.Size(48, 27);
+            this.exp_event_num.Size = new System.Drawing.Size(48, 23);
             this.exp_event_num.TabIndex = 32;
             this.exp_event_num.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.exe_event_send);
             // 
@@ -387,7 +384,7 @@
             this.drop_event_num.Dock = System.Windows.Forms.DockStyle.Fill;
             this.drop_event_num.Location = new System.Drawing.Point(92, 35);
             this.drop_event_num.Name = "drop_event_num";
-            this.drop_event_num.Size = new System.Drawing.Size(48, 27);
+            this.drop_event_num.Size = new System.Drawing.Size(48, 23);
             this.drop_event_num.TabIndex = 35;
             this.drop_event_num.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.drop_event_send);
             // 

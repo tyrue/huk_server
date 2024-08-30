@@ -13,7 +13,7 @@ namespace SupremePlayServer
 
         public Dictionary<string, int> packetMessageDict;
         public Dictionary<string, int> mapPacketMessageDict;
-        public Dictionary<string, int> ignoreMessageDict;
+        public Dictionary<string, int> logMessageDict;
 
         public List<string> random_server_msg;
 
@@ -30,7 +30,7 @@ namespace SupremePlayServer
 
                 packetMessageDict = new Dictionary<string, int>(comparer);
                 mapPacketMessageDict= new Dictionary<string, int>(comparer);
-                ignoreMessageDict = new Dictionary<string, int>(comparer);
+                logMessageDict = new Dictionary<string, int>(comparer);
 
                 system_db = new System_DB();
                 map_data = system_db.SendMap();
@@ -38,7 +38,7 @@ namespace SupremePlayServer
 
                 makePacketMessageDict(packetMessageDict);
                 makeMapPacketMessageDict(mapPacketMessageDict);
-                makeignoreMessageDict(ignoreMessageDict);
+                makeLogMessageDict(logMessageDict);
                 make_random_msg(random_server_msg);
 
                 // 파티 퀘스트 맵 아이디 저장
@@ -86,28 +86,29 @@ namespace SupremePlayServer
 
         public void makePacketMessageDict(Dictionary<string, int> dict)
         {
+            // 0은 자신 제외, 1은 자신 포함
             // 메시지 관련
-            dict.Add("<chat>", 0);    // 공지
-            dict.Add("<chat1>", 0);   // 일반 채팅
-            dict.Add("<bigsay>", 0);  // 외치기
-            dict.Add("<whispers>", 0); // 귓속말
+            dict.Add("<chat>", 1);    // 공지
+            dict.Add("<chat1>", 1);   // 일반 채팅
+            dict.Add("<bigsay>", 1);  // 외치기
             dict.Add("<System_Message>", 0);
 
             // 길드 관련
-            dict.Add("<Guild_Message>", 0); // 길드 메시지
+            dict.Add("<guild_message>", 1); // 길드 메시지
             dict.Add("<guild_group>", 0);
             dict.Add("<guild_invite>", 0);
             dict.Add("<guild_delete>", 0);
-            
+
             // 운영자 권한 관련
+            dict.Add("<ki>", 0);
             dict.Add("<summon>", 0);
             dict.Add("<all_summon>", 0);
-            dict.Add("<prison>", 0);  // 감옥
-            dict.Add("<cashgive>", 0);
+            dict.Add("<prison>", 1);  // 감옥
+            dict.Add("<emancipation>", 1);
 
             // 파티 관련
             dict.Add("<party>", 0);   // 파티
-            dict.Add("<party_message>", 0);
+            dict.Add("<party_message>", 1);
             dict.Add("<party_req>", 0);
             dict.Add("<party_no>", 0);
             dict.Add("<party_yes>", 0);
@@ -165,16 +166,21 @@ namespace SupremePlayServer
             dict.Add("<make_range_sprite>", 0); // 범위 스킬 이펙트
         }
 
-        // 로그에 넣지 않을 메시지
-        public void makeignoreMessageDict(Dictionary<string, int> dict)
+        // 로그에 넣을 메시지
+        public void makeLogMessageDict(Dictionary<string, int> dict)
         {
+            // 플레이어 관련
+            dict.Add("<login>", 0);
+            //dict.Add("<m5>", 0);
+            dict.Add("<9>", 0); // 플레이어 종료
+
             // 메시지 관련
             dict.Add("<System_Message>", 0);
-
-            // 길드 관련
-            dict.Add("<guild_group>", 0);
-            dict.Add("<guild_invite>", 0);
-            dict.Add("<guild_delete>", 0);
+            dict.Add("<chat>", 0);   // 공지
+            dict.Add("<chat1>", 0);   // 일반 채팅
+            dict.Add("<bigsay>", 0);  // 외치기
+            dict.Add("<whispers>", 0); // 귓속말
+            dict.Add("<party_message>", 0); // 파티
 
             // 운영자 권한 관련
             dict.Add("<summon>", 0);
@@ -183,56 +189,27 @@ namespace SupremePlayServer
             dict.Add("<cashgive>", 0);
 
             // 파티 관련
-            dict.Add("<party>", 0);   // 파티
-            dict.Add("<party_req>", 0);
-            dict.Add("<party_no>", 0);
-            dict.Add("<party_yes>", 0);
-            dict.Add("<party_out>", 0);
-            dict.Add("<party_heal>", 0); // 파티 힐
-            dict.Add("<party_gain>", 0); // 파티 아이템 획득
-
+            dict.Add("<party_create>", 0);   // 파티
+            dict.Add("<party_end>", 0);
+            dict.Add("<party_invite>", 0);
+            dict.Add("<party_accept>", 0);
+            
             // 교환 관련
             dict.Add("<trade_invite>", 0);
-            dict.Add("<trade_system>", 0);
-            dict.Add("<trade_okay>", 0);
-            dict.Add("<trade_fail>", 0);
-
+            dict.Add("<trade_addItem>", 0);
+            dict.Add("<trade_removeItem>", 0);
+            dict.Add("<trade_ready>", 0);
+            dict.Add("<trade_cancel>", 0);
+            dict.Add("<trade_accept>", 0);
+            
             // 기타
             dict.Add("<switches>", 0); // 스위치 공유
             dict.Add("<variables>", 0); // 변수 공유
-            dict.Add("<8>", 0); // 유저 죽음 알림
-
-            // 몬스터 관련
-            dict.Add("<aggro>", 0); // 몬스터 어그로
-            dict.Add("<respawn>", 0); // 몹 부활 공유
-            dict.Add("<hp>", 0); // 몹 체력 공유
-            dict.Add("<enemy_dead>", 0); // 몹 죽음 공유
-            dict.Add("<mon_move>", 0); // 몬스터 이동 공유
-            dict.Add("<mon_damage>", 0); // 몬스터 데미지 표시
-
-            // 애니메이션 관련
-            dict.Add("<event_animation>", 0);
-            dict.Add("<player_animation>", 0);
-            dict.Add("<27>", 0); // 애니메이션 재생
-
-            // 플레이어 관련
-            dict.Add("<player_damage>", 0); // 플레이어 데미지 표시
-            dict.Add("<map_chat>", 0); // 플레이어 말풍선 표시
+            dict.Add("<map_name>", 0); // 맵 이름
 
             // 아이템 드랍 관련
             dict.Add("<Drop>", 0);    // 템 드랍
-            dict.Add("<drop_create>", 0); // 템 드랍
-            dict.Add("<drop_del>", 0);    // 템 삭제
-
-            // pvp 관련
-            dict.Add("<attack_effect>", 0); // pvp 평타
-            dict.Add("<skill_effect>", 0); // pvp 스킬
-
-            // 기타
-            dict.Add("<se_play>", 0); // 효과음 실행
-            dict.Add("<monster_chat>", 0); // 몬스터 말풍선 표시
-            dict.Add("<show_range_skill>", 0); // 스킬 
-            dict.Add("<make_range_sprite>", 0); // 범위 스킬 이펙트
+            dict.Add("<Drop_Get>", 0);    // 템 줍기
         }
 
         public void SaveMonster(string data)
@@ -269,12 +246,16 @@ namespace SupremePlayServer
                 }
 
                 // 변동 변수들
-                int.TryParse(d["hp"], out monster.hp);
+                long.TryParse(d["hp"], out monster.hp);
                 int.TryParse(d["sp"], out monster.sp);
                 int.TryParse(d["direction"], out monster.direction);                
                 int.TryParse(d["x"], out monster.x);
                 int.TryParse(d["y"], out monster.y);
-                monster.dead = monster.hp <= 0;
+                monster.dead = false;
+                if(monster.hp <= 0)
+                {
+                    monster.dead = true;
+                }
             }
             catch (Exception e)
             {
@@ -282,23 +263,20 @@ namespace SupremePlayServer
             }
         }
 
-        public void DeleteMonster(string data)
+        public void DeleteMonster(string data, int map_id)
         {
             try
             {
-                // id, 이벤트 id, map id, netparty장 이름
-                string[] d = data.Split(',');
-                int id = int.Parse(d[0]);
-                int map_id = int.Parse(d[1]);
-
+                int id = int.Parse(data);
                 if (!monster_data.ContainsKey(map_id)) return;
                 if (!monster_data[map_id].ContainsKey(id)) return;
+
+                monster_data[map_id][id].dead = true;
                 if (monster_data[map_id][id].delete_sw)
                 {
                     monster_data[map_id].Remove(id);
                     return;
                 }
-                monster_data[map_id][id].dead = true;
             }
             catch (Exception e)
             {
@@ -338,19 +316,19 @@ namespace SupremePlayServer
             }
         }
 
-
-        public void DelItem2(string data) // 맵id, id
+        public void DelItem2(string data, int map_id) // 맵id, id
         {
             try
             {
                 string[] s = data.Split(',');
-                int map_id = int.Parse(s[1]);
                 int id = int.Parse(s[0]);
 
                 if (!item_data2.ContainsKey(map_id)) return;
+
                 var d = from i in item_data2[map_id]
                         where i.id == id
                         select i;
+
                 if (d != null && d.Count() > 0)
                     item_data2[map_id].Remove(d.First());
             }
@@ -391,15 +369,22 @@ namespace SupremePlayServer
 
                 foreach (var data in d)
                 {
-                    data.respawn -= 60;
+                    data.respawn -= 1;
                     if (data.respawn <= 0)
                     {
                         data.respawn = data.respawn_save;
-                        string s = data.map_id + "," + data.id + "," + data.x + "," + data.y + "," + data.direction;
+
+                        List<string> dataList = new List<string>();
+                        dataList.Add(data.map_id.ToString());
+                        dataList.Add(data.id.ToString());
+                        dataList.Add(data.mon_id.ToString());
+
+                        string s = string.Join(",", dataList);
                         data.dead = false;
                         list.Add(s);
                     }
                 }
+
                 return list;
             }
             catch (Exception e)

@@ -12,7 +12,7 @@ namespace SupremePlayServer
         public int id;
         public int x;
         public int y;
-        public int hp;
+        public long hp;
         public int sp;
         public int direction;
         public int respawn;

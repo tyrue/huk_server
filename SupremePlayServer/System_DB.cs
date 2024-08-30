@@ -1,145 +1,164 @@
 ﻿using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Net.Sockets;
-using System.Text;
 using System.Windows.Forms;
 
 namespace SupremePlayServer
 {
     public class System_DB : UserThread
     {
-        private string DBInfo =
+        public string DBInfo =
+        //"Server=127.0.0.1;" +
+        //"Server=database-1.c3c2a4qqcid0.ap-northeast-2.rds.amazonaws.com;" +
 
-            "Server=127.0.0.1;" +
-            // aws 외부 접속 db 주소
-            //"Server=database-1.c3c2a4qqcid0.ap-northeast-2.rds.amazonaws.com;" +
+        "Uid=root;" +
+        "Pwd=abs753951;" +
+        "Database=supremeplay;" +
+        "CharSet=utf8;";
 
-            "Uid=root;" +
-            "Pwd=abs753951;" +
-            "Database=supremeplay;" +
-            "CharSet=utf8;";
+        private MySqlConnection GetConnection()
+        {
+            return new MySqlConnection(DBInfo);
+        }
 
+        private bool CheckIfExists(MySqlConnection conn, string query, Dictionary<string, object> parameters)
+        {
+            using (var cmd = new MySqlCommand(query, conn))
+            {
+                foreach (var param in parameters)
+                {
+                    cmd.Parameters.AddWithValue(param.Key, param.Value);
+                }
 
-        
+                using (var reader = cmd.ExecuteReader())
+                {
+                    return reader.Read();
+                }
+            }
+        }
+
         #region 회원가입
-
         public void Registeration(UserThread user, string tag, string body)
         {
             try
             {
-                // resultcode  // 0 : 아이디 없음 1 : 아이디 이미 있음 2 : 닉네임 이미 있음
                 int resultcode = 0;
-                String[] d1;
+                string[] co = { "," };
+                var data = body.Split(co, StringSplitOptions.RemoveEmptyEntries);
 
-                using (MySqlConnection conn = new MySqlConnection(DBInfo))
+                using (var conn = GetConnection())
                 {
-                    // get Data
-                    string[] co = { "," };
-                    d1 = body.Split(co, StringSplitOptions.RemoveEmptyEntries);
-
-                    // DB Connection
                     conn.Open();
-                    string sql = "SELECT* FROM user";
 
-                    // Mysql Connection
-                    MySqlCommand cmd = new MySqlCommand(sql, conn);
-                    MySqlDataReader rdr = cmd.ExecuteReader();
-                    while (rdr.Read())
+                    // Check if ID or nickname already exists
+                    var checkQuery = "SELECT id, nickname FROM user WHERE id = @id OR nickname = @nickname";
+                    var parameters = new Dictionary<string, object>
                     {
-                        if (rdr["id"].ToString().Equals(d1[1]))
+                        {"@id", data[1]},
+                        {"@nickname", data[0]}
+                    };
+
+                    using (var cmd = new MySqlCommand(checkQuery, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@id", data[1]);
+                        cmd.Parameters.AddWithValue("@nickname", data[0]);
+                        using (var reader = cmd.ExecuteReader())
                         {
-                            resultcode = 1;
-                            break;
-                        }
-                        if (rdr["nickname"].ToString().Equals(d1[0]))
-                        {
-                            resultcode = 2;
-                            break;
+                            while (reader.Read())
+                            {
+                                if (reader["id"].ToString() == data[1])
+                                {
+                                    resultcode = 1; // 아이디 이미 있음
+                                    break;
+                                }
+                                if (reader["nickname"].ToString() == data[0])
+                                {
+                                    resultcode = 2; // 닉네임 이미 있음
+                                    break;
+                                }
+                            }
                         }
                     }
-                    rdr.Close();
-                    conn.Close();
                 }
 
-                // No Exist nickname & id
                 if (resultcode == 0)
                 {
-                    using (MySqlConnection conn = new MySqlConnection(DBInfo))
+                    using (var conn = GetConnection())
                     {
-                        // DB Connection
                         conn.Open();
 
-                        string sql = "INSERT INTO user VALUES('" + d1[0] + "', '" + d1[1] + "', '" + d1[2] + "', now())";
-                        MySqlCommand cmd = new MySqlCommand(sql, conn);
-                        cmd.ExecuteNonQuery();
+                        var insertQuery = "INSERT INTO user VALUES (@nickname, @id, @password, NOW())";
+                        using (var cmd = new MySqlCommand(insertQuery, conn))
+                        {
+                            cmd.Parameters.AddWithValue("@nickname", data[0]);
+                            cmd.Parameters.AddWithValue("@id", data[1]);
+                            cmd.Parameters.AddWithValue("@password", data[2]);
+                            cmd.ExecuteNonQuery();
+                        }
+
                         user.SendMessageWithTag(tag, "success");
                     }
                 }
-                else if (resultcode == 1) user.SendMessageWithTag(tag, "wi"); // Already Exist Id
-                else if (resultcode == 2) user.SendMessageWithTag(tag, "wn"); // Already Exist nickname
+                else if (resultcode == 1)
+                {
+                    user.SendMessageWithTag(tag, "wi"); // 이미 존재하는 아이디
+                }
+                else if (resultcode == 2)
+                {
+                    user.SendMessageWithTag(tag, "wn"); // 이미 존재하는 닉네임
+                }
             }
             catch (Exception e)
             {
                 mainForm.write_log(e.ToString());
             }
         }
-
         #endregion
-
 
         #region 로그인
-
-        public String Login(String message)
+        public string Login(string message)
         {
-            String UserName = "*null*,*null*";
-
+            string userName = "*null*,*null*";
             try
             {
-                // resultcode  // 0 : 아이디 잘못 입력 1 : 비번 잘못입력  2 : 로긴 성공
+                var data = message.Split('|');
+                var id = data[0];
+                var password = data[1];
                 int resultcode = 0;
 
-                using (MySqlConnection conn = new MySqlConnection(DBInfo))
+                using (var conn = GetConnection())
                 {
-                    // get Data
-                    String[] data = message.Split('|');
-                    string id = data[0];
-                    string pw = data[1];
-
-                    // DB Connection
                     conn.Open();
-                    string sql = "SELECT* FROM user where id = '" + id + "'";
 
-                    // Mysql Connection
-                    MySqlCommand cmd = new MySqlCommand(sql, conn);
-                    MySqlDataReader rdr = cmd.ExecuteReader();
-                    while (rdr.Read())
+                    var query = "SELECT nickname, password FROM user WHERE id = @id";
+                    using (var cmd = new MySqlCommand(query, conn))
                     {
-                        resultcode = 1;
-                        if (rdr["password"].ToString().Equals(pw))
+                        cmd.Parameters.AddWithValue("@id", id);
+                        using (var reader = cmd.ExecuteReader())
                         {
-                            UserName = rdr["nickname"].ToString() + "," + id;
-                            resultcode = 2;
-                            break;
+                            if (reader.Read())
+                            {
+                                resultcode = 1; // 아이디는 있음
+                                if (reader["password"].ToString() == password)
+                                {
+                                    userName = $"{reader["nickname"]},{id}";
+                                    resultcode = 2; // 로그인 성공
+                                }
+                            }
                         }
                     }
-                    rdr.Close();
-                    conn.Close();
                 }
 
-                UserName += "," + resultcode;
+                userName += $",{resultcode}";
             }
             catch (Exception e)
             {
                 mainForm.write_log(e.ToString());
             }
 
-            return UserName;
+            return userName;
         }
-
         #endregion
-
 
         #region 유저 데이터 저장
         public void SaveData2(string pkdata, string userId)
@@ -148,28 +167,24 @@ namespace SupremePlayServer
 
             try
             {
-                Dictionary<string, string> dataDict = ParseKeyValueData(pkdata); // 키:값 형식 데이터 파싱
-                if (!dataDict.ContainsKey("nickname") || string.IsNullOrEmpty(dataDict["nickname"])) 
+                var dataDict = ParseKeyValueData(pkdata);
+                if (!dataDict.ContainsKey("nickname") || string.IsNullOrEmpty(dataDict["nickname"]))
                     return;
-                
-                using (MySqlConnection conn = new MySqlConnection(DBInfo))
+
+                using (var conn = GetConnection())
                 {
                     conn.Open();
 
-                    // 중복된 닉네임이 있는지 확인
-                    string selectQuery = $"SELECT * FROM userinfo WHERE nickname = '{dataDict["nickname"]}'";
-                    MySqlCommand selectCmd = new MySqlCommand(selectQuery, conn);
-                    MySqlDataReader reader = selectCmd.ExecuteReader();
+                    // Check if the record exists
+                    var checkQuery = "SELECT 1 FROM userinfo WHERE nickname = @nickname";
+                    var exists = CheckIfExists(conn, checkQuery, new Dictionary<string, object> { { "@nickname", dataDict["nickname"] } });
 
-                    bool existingRecord = reader.Read();
-                    reader.Close();
-
-                    if (existingRecord) // 이미 존재하는 레코드가 있을 경우
+                    if (exists)
                     {
                         string updateQuery = "UPDATE userinfo SET ";
                         List<string> updateValues = new List<string>();
 
-                        
+
                         foreach (var pair in dataDict)
                         {
                             // 닉네임을 제외한 키:값들로 업데이트 쿼리 생성
@@ -185,55 +200,49 @@ namespace SupremePlayServer
                         MySqlCommand updateCmd = new MySqlCommand(updateQuery, conn);
                         updateCmd.ExecuteNonQuery();
                     }
-                    else // 존재하지 않는 경우, 새로운 레코드 삽입
+                    else
                     {
+                        // Insert new record
                         dataDict.Add("id", userId);
                         string insertQuery = $"INSERT INTO userinfo ({string.Join(", ", dataDict.Keys)}) " +
                                              $"VALUES ('{string.Join("', '", dataDict.Values)}')";
                         MySqlCommand insertCmd = new MySqlCommand(insertQuery, conn);
                         insertCmd.ExecuteNonQuery();
                     }
-
-                    conn.Close();
                 }
             }
             catch (Exception e)
             {
-                mainForm.write_log(e.ToString()); // 예외 발생 시 로그 출력
+                mainForm.write_log(e.ToString());
             }
         }
-
-
         #endregion
-
 
         #region 유저 데이터 전송
-
-        public void SendData(UserThread user, String userid)
+        public void SendData(UserThread user, string userid)
         {
             try
             {
-                using (MySqlConnection conn = new MySqlConnection(DBInfo))
+                using (var conn = GetConnection())
                 {
-                    // DB Connection
                     conn.Open();
 
-                    string sql = "" +
-                        "SELECT* FROM userinfo " +
-                        "WHERE id = '" + userid + "'";
-                    MySqlCommand cmd = new MySqlCommand(sql, conn);
-                    MySqlDataReader rdr = cmd.ExecuteReader();
-
-                    while (rdr.Read())
+                    var query = "SELECT * FROM userinfo WHERE id = @id";
+                    using (var cmd = new MySqlCommand(query, conn))
                     {
-                        for (int i = 0; i < rdr.FieldCount; i++)
+                        cmd.Parameters.AddWithValue("@id", userid);
+                        using (var reader = cmd.ExecuteReader())
                         {
-                            user.SendMessageWithTag("dataload", rdr.GetName(i) + ":" + rdr[i].ToString());
+                            while (reader.Read())
+                            {
+                                for (int i = 0; i < reader.FieldCount; i++)
+                                {
+                                    user.SendMessageWithTag("dataload", $"{reader.GetName(i)}:{reader[i]}");
+                                }
+                                user.SendMessageWithTag("dataLoadEnd", "ok");
+                            }
                         }
-                        user.SendMessageWithTag("dataLoadEnd", "ok");
                     }
-                    rdr.Close();
-                    conn.Close();
                 }
             }
             catch (Exception e)
@@ -243,120 +252,75 @@ namespace SupremePlayServer
         }
         #endregion
 
+        #region 맵 이름 전송
         public Dictionary<int, string> SendMap()
         {
+            var data = new Dictionary<int, string>();
             try
             {
-                Dictionary<int, string> data = new Dictionary<int, string>();
-                using (MySqlConnection conn = new MySqlConnection(DBInfo))
+                using (var conn = GetConnection())
                 {
-                    
-                    // DB Connection
                     conn.Open();
-                    
 
-                    string sql = "" +
-                        "SELECT* FROM map_name " +
-                        "ORDER BY id ASC";
-                    MySqlCommand cmd = new MySqlCommand(sql, conn);
-                    MySqlDataReader rdr = cmd.ExecuteReader();
-
-                    while (rdr.Read())
+                    var query = "SELECT * FROM map_name ORDER BY id ASC";
+                    using (var cmd = new MySqlCommand(query, conn))
                     {
-                        data[int.Parse(rdr[0].ToString())] = rdr[1].ToString();
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                data[int.Parse(reader["id"].ToString())] = reader["name"].ToString();
+                            }
+                        }
                     }
-                    conn.Close();
                 }
-                return data;
             }
             catch (Exception e)
             {
-                if(mainForm == null)
-                {
-                    MessageBox.Show(e.ToString());
-                }
-                mainForm.write_log(e.ToString());
-                return null;
+                mainForm?.write_log(e.ToString());
             }
+            return data;
         }
+        #endregion
 
         #region 맵 id에 대한 이름 저장
-        public void SaveMap(String pkdata)
+        public void SaveMap(string pkdata)
         {
             pkdata = splitTag("map_name", pkdata);
+            string[] co = { "," };
+            var data = pkdata.Split(co, StringSplitOptions.RemoveEmptyEntries);
 
-            string[] co1 = { "," };
-            String[] data = pkdata.Split(co1, StringSplitOptions.RemoveEmptyEntries);
-
-            String query = "\"";
-            String u_query = "";
             try
             {
-                for (int i = 0; i < data.Length; i++)
+                using (var conn = GetConnection())
                 {
-                    if (data[i].Equals(""))
-                    {
-                        data[i] = "nil";
-                    }
-
-                    query += data[i];
-
-                    if (i != data.Length - 1)
-                        query += "\", \"";
-                    else
-                        query += "\"";
-                }
-
-                using (MySqlConnection conn = new MySqlConnection(DBInfo))
-                {
-                    // DB Connection
                     conn.Open();
 
-                    string sql = "" +
-                        "SELECT* FROM map_name" +
-                        " WHERE (id = " + data[0] + ")";
-                    MySqlCommand cmd = new MySqlCommand(sql, conn);
-                    MySqlDataReader rdr = cmd.ExecuteReader();
+                    var checkQuery = "SELECT 1 FROM map_name WHERE id = @id";
+                    var exists = CheckIfExists(conn, checkQuery, new Dictionary<string, object> { { "@id", data[0] } });
 
-                    while (rdr.Read())
+                    if (exists)
                     {
-                        for (int i = 0; i < rdr.FieldCount; i++)
+                        var updateQuery = "UPDATE map_name SET name = @name WHERE id = @id";
+                        using (var cmd = new MySqlCommand(updateQuery, conn))
                         {
-                            // 필드 이름 받아옴
-                            u_query += rdr.GetName(i) + "=\"" + data[i] + "\"";
-                            if (i != rdr.FieldCount - 1)
-                            {
-                                u_query += ", ";
-                            }
+                            cmd.Parameters.AddWithValue("@id", data[0]);
+                            cmd.Parameters.AddWithValue("@name", data[1]);
+                            cmd.ExecuteNonQuery();
                         }
-                        break;
-                    }
-
-                    conn.Close();
-                }
-
-                using (MySqlConnection conn = new MySqlConnection(DBInfo))
-                {
-                    // DB Connection
-                    conn.Open();
-                    string sql = "";
-                    if (u_query != "") // DB에 해당 맵의 이벤트가 없다면 새로 추가
-                    {
-                        sql = "" +
-                            "UPDATE map_name" +
-                            " SET " + u_query +
-                            " WHERE (id = " + data[0] + ")";
                     }
                     else
                     {
-                        sql = "INSERT INTO map_name VALUES(" + query + ")";
+                        var insertQuery = "INSERT INTO map_name (id, name) VALUES (@id, @name)";
+                        using (var cmd = new MySqlCommand(insertQuery, conn))
+                        {
+                            cmd.Parameters.AddWithValue("@id", data[0]);
+                            cmd.Parameters.AddWithValue("@name", data[1]);
+                            cmd.ExecuteNonQuery();
+                        }
                     }
-                    MySqlCommand cmd = new MySqlCommand(sql, conn);
-                    cmd.ExecuteNonQuery();
-                    conn.Close();
                 }
             }
-
             catch (Exception e)
             {
                 mainForm.write_log(e.ToString());
