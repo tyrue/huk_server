@@ -61,6 +61,24 @@ namespace SupremePlayServer.Properties {
         }
         
         /// <summary>
+        ///   drop과(와) 유사한 지역화된 문자열을 찾습니다.
+        /// </summary>
+        internal static string DROP_SET_NAME {
+            get {
+                return ResourceManager.GetString("DROP_SET_NAME", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   exe과(와) 유사한 지역화된 문자열을 찾습니다.
+        /// </summary>
+        internal static string EXE_SET_NAME {
+            get {
+                return ResourceManager.GetString("EXE_SET_NAME", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   (아이콘)과(와) 유사한 System.Drawing.Icon 형식의 지역화된 리소스를 찾습니다.
         /// </summary>
         internal static System.Drawing.Icon icon {

@@ -12,10 +12,14 @@ namespace SupremePlayServer
         public int id;
         public int x;
         public int y;
-        public int hp;
+        public long hp;
+        public int sp;
         public int direction;
         public int respawn;
+        public int respawn_save;
         public bool dead;
+        public int mon_id;
+        public bool delete_sw;
 
         public Monster()
         {
@@ -24,9 +28,12 @@ namespace SupremePlayServer
             x = 0;
             y = 0;
             hp = 0;
+            sp = 0;
             direction = 0;
             respawn = 0;
+            respawn_save = 0;
             dead = false;
+            delete_sw = false;
         }
     }
 }
