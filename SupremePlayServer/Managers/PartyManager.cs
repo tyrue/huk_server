@@ -10,9 +10,10 @@ namespace SupremePlayServer
     {
         public int Compare(UserThread u1, UserThread u2)
         {
+            if (u1 == null || u2 == null)
+                throw new ArgumentNullException("UserThread 객체가 null입니다.");
             return u1.userName.CompareTo(u2.userName);
         }
-
     }
 
     public class PartyManager
@@ -25,147 +26,176 @@ namespace SupremePlayServer
 
         public PartyManager(UserThread user)
         {
+            if (user == null)
+                throw new ArgumentNullException(nameof(user), "UserThread 객체가 null일 수 없습니다.");
+
+
             partyMembers = new SortedSet<UserThread>(new Comp());
             maxSize = 5;
             myUser = user;
         }
 
-        public bool createParty()
+        public async Task<bool> CreatePartyAsync()
         {
             if (partyMembers.Count > 0)
             {
-                myUser.SendConsoleMessage("이미 파티가 있습니다.");
+                await myUser.SendConsoleMessageAsync("이미 파티가 있습니다.");
                 return false;
             }
 
             leader = myUser;
-            myUser.SendConsoleMessage("파티가 생성되었습니다.");
-            addProcess(myUser);
+            await myUser.SendConsoleMessageAsync("파티가 생성되었습니다.");
+            await AddProcessAsync(myUser);
             return true;
         }
 
-        public bool addMember(UserThread user)
+        public async Task<bool> AddMemberAsync(UserThread user)
         {
-            if (partyMembers.Count >= maxSize)
+            if (user == null)
             {
-                myUser.SendConsoleMessage("남은 자리가 없습니다.");
+                await myUser.SendConsoleMessageAsync("유효하지 않은 사용자입니다.");
                 return false;
             }
 
-            foreach(var member in partyMembers)
+            if (partyMembers.Count >= maxSize)
             {
-                if(!member.Equals(myUser)) member.partyManger.addProcess(user);
+                await myUser.SendConsoleMessageAsync("남은 자리가 없습니다.");
+                return false;
             }
-            addProcess(user);
+
+            foreach (var member in partyMembers)
+            {
+                if (!member.Equals(myUser))
+                {
+                    await member.partyManger.AddProcessAsync(user);
+                }
+            }
+            await AddProcessAsync(user);
             return true;
         }
 
-        public void addProcess(UserThread user)
+        public async Task AddProcessAsync(UserThread user)
         {
+            if (user == null) return;
+
             partyMembers.Add(user);
-            myUser.SendConsoleMessage($"{user.userName}님을 파티에 추가했습니다.");
-            myUser.SendMessageWithTag("party_add", $"member:{user.userName}");
+            await myUser.SendConsoleMessageAsync($"{user.userName}님을 파티에 추가했습니다.");
+            await myUser.SendMessageWithTagAsync("party_add", $"member:{user.userName}");
         }
 
-        public void removeMember(UserThread user)
+        public async Task RemoveMemberAsync(UserThread user)
         {
-            if (!partyMembers.Contains(user)) return;
+            if (user == null || !partyMembers.Contains(user)) return;
 
-            removeProcess(user);
-            foreach(var member in partyMembers)
+            await RemoveProcessAsync(user);
+            foreach (var member in partyMembers)
             {
-                if (!member.Equals(myUser)) member.partyManger.removeProcess(user);
+                if (member != null && !member.Equals(myUser))
+                {
+                    await member.partyManger?.RemoveProcessAsync(user);
+                }
             }
         }
 
-        public void removeProcess(UserThread user)
+        public async Task RemoveProcessAsync(UserThread user)
         {
-            partyMembers.Remove(user);
-            myUser.SendConsoleMessage($"{user.userName}님이 파티를 탈퇴 했습니다.");
-            myUser.SendMessageWithTag("party_remove", $"member:{user.userName}");
+            if (user == null) return;
 
-            if (!leader.Equals(user)) return;
-            if (partyMembers.Count <= 0) return;
-            setLeader(partyMembers.First());
+            partyMembers.Remove(user);
+            await myUser.SendConsoleMessageAsync($"{user.userName}님이 파티를 탈퇴 했습니다.");
+            await myUser.SendMessageWithTagAsync("party_remove", $"member:{user.userName}");
+
+            if (leader != null && leader.Equals(user) && partyMembers.Count > 0)
+            {
+                await SetLeaderAsync(partyMembers.First());
+            }
         }
 
-        public void endParty()
+        public async Task EndPartyAsync()
         {
             partyMembers.Remove(myUser);
-            foreach(var member in partyMembers)
+            foreach (var member in partyMembers)
             {
-                member.partyManger.removeMember(myUser);
+                await member?.partyManger?.RemoveMemberAsync(myUser);
             }
-            myUser.SendConsoleMessage("파티를 탈퇴 했습니다.");
-            initialSetting();
+
+            await myUser.SendConsoleMessageAsync("파티를 탈퇴 했습니다.");
+            await InitialSetting();
         }
 
-        public void inviteParty(string name) // 파티 초대
+        public async Task InvitePartyAsync(string name)
         {
-            if(string.IsNullOrEmpty(name))
+            if (string.IsNullOrEmpty(name))
             {
-                myUser.SendConsoleMessage("[파티]:초대할 유저의 이름을 입력하세요.");
+                await myUser.SendConsoleMessageAsync("[파티]:초대할 유저의 이름을 입력하세요.");
                 return;
             }
             if (name.Equals(myUser.userName))
             {
-                myUser.SendConsoleMessage("[파티]:자기 자신을 초대할 수 없습니다.");
+                await myUser.SendConsoleMessageAsync("[파티]:자기 자신을 초대할 수 없습니다.");
                 return;
             }
             if (partyMembers.Count >= maxSize)
             {
-                myUser.SendConsoleMessage($"[파티]:파티는 최대 {maxSize}명 까지 가능합니다.");
+                await myUser.SendConsoleMessageAsync($"[파티]:파티는 최대 {maxSize}명 까지 가능합니다.");
                 return;
             }
-            if(!myUser.mainForm.UserByNameDict.ContainsKey(name))
+            if (!myUser.mainForm.UserByNameDict.ContainsKey(name))
             {
-                myUser.SendConsoleMessage($"[파티]:{name}님은 현재 존재하지 않습니다.");
+                await myUser.SendConsoleMessageAsync($"[파티]:{name}님은 현재 존재하지 않습니다.");
                 return;
             }
 
-            if (partyMembers.Count <= 0) createParty();
+            if (partyMembers.Count <= 0)
+            {
+                await CreatePartyAsync();
+            }
 
             var target = myUser.mainForm.UserByNameDict[name];
             target.partyManger.inviter = myUser;
 
             string msg = $"name:{myUser.userName}";
-            target.SendMessageWithTag("party_req", msg);
+            await target.SendMessageWithTagAsync("party_req", msg);
         }
 
-        public void acceptParty()
+        public async Task AcceptPartyAsync()
         {
             if (inviter == null) return;
+
             var target = inviter.partyManger;
-            target.addMember(myUser);
-            enterParty(target.partyMembers, target.leader);
-            inviter = null;
+            if (await target.AddMemberAsync(myUser))
+            {
+                await EnterPartyAsync(target.partyMembers, target.leader);
+                inviter = null;
+            }
         }
 
-        public void refuseParty()
+        public async Task RefusePartyAsync()
         {
             if (inviter == null) return;
-            inviter.SendConsoleMessage($"{myUser.userName}님이 초대를 거절하셨습니다.");
-            inviter.partyManger.initialSetting();
-            initialSetting();
+
+            await inviter.SendConsoleMessageAsync($"{myUser.userName}님이 초대를 거절하셨습니다.");
+            await inviter.partyManger?.InitialSetting();
+            await InitialSetting();
         }
 
-        public void enterParty(SortedSet<UserThread> members, UserThread leader)
+        public async Task EnterPartyAsync(SortedSet<UserThread> members, UserThread leader)
         {
             foreach (var member in members)
             {
-                addProcess(member);
+                await AddProcessAsync(member);
             }
             this.leader = leader;
-            myUser.SendConsoleMessage("파티에 참가하였습니다.");
+            await myUser.SendConsoleMessageAsync("파티에 참가하였습니다.");
         }
 
-        public void setLeader(UserThread leader)
+        public async Task SetLeaderAsync(UserThread leader)
         {
             this.leader = leader;
-            myUser.SendConsoleMessage($"{leader.userName}님이 파티장이 되셨습니다.");
+            await myUser.SendConsoleMessageAsync($"{leader.userName}님이 파티장이 되셨습니다.");
         }
 
-        public void initialSetting()
+        public async Task InitialSetting()
         {
             partyMembers.Clear();
             leader = null;
