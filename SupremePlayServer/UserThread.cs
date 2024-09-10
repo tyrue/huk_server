@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace SupremePlayServer
@@ -32,6 +34,15 @@ namespace SupremePlayServer
         private System.Timers.Timer versionCheckTimer;
         public PartyManager partyManger;
         public TradeManager tradeManager;
+        public Player player;
+
+        public IPEndPoint ip_point;
+        public string ipAddress;
+
+        public UserThread(mainForm mainForm)
+        {
+            this.mainForm = mainForm;
+        }
 
         public void StartClient(TcpClient clientSocket)
         {
@@ -47,11 +58,15 @@ namespace SupremePlayServer
             userCode = new Random().Next(0, 9999999).ToString();
             partyManger = new PartyManager(this);
             tradeManager = new TradeManager(this);
+            player = new Player();
 
             client = clientSocket;
+            ip_point = (IPEndPoint)client.Client.RemoteEndPoint;
+            ipAddress = ip_point.Address.ToString();
+
             NS = client.GetStream();
-            SR = new StreamReader(NS, Encoding.UTF8);
-            SW = new StreamWriter(NS, Encoding.UTF8);
+            SR = new StreamReader(NS, Encoding.UTF8, false, 1024 * 8); // 8KB 버퍼
+            SW = new StreamWriter(NS, Encoding.UTF8, 1024 * 8) { AutoFlush = true }; // 8KB 버퍼, 자동 Flush
         }
 
         private void StartListenerThread()
@@ -64,18 +79,18 @@ namespace SupremePlayServer
         {
             versionCheckTimer = new System.Timers.Timer();
             versionCheckTimer.Interval = 5000;
-            versionCheckTimer.Elapsed += new System.Timers.ElapsedEventHandler(VersionCheckTimerTick);
+            versionCheckTimer.Elapsed += async (sender, e) => await VersionCheckTimerTickAsync();
             versionCheckTimer.AutoReset = false;
         }
 
-        private void VersionCheckTimerTick(object sender, EventArgs e)
+        private async Task VersionCheckTimerTickAsync()
         {
             mainForm.write_log("카운트다운 끝");
             if (!isVersionValid)
             {
                 mainForm.write_log("version_false");
-                SendMessageWithTag("over", "버전이 다릅니다.");
-                CloseClient(true);
+                await SendMessageWithTagAsync("over", "버전이 다릅니다.");
+                await CloseClientAsync(true);
             }
             else
             {
@@ -87,16 +102,16 @@ namespace SupremePlayServer
 
 
         // Thread - Net Listener
-        private void NetListener()
+        private async void NetListener()
         {
             try
             {
                 while (client.Connected)
                 {
-                    string receivedMessage = SR.ReadLine();
+                    string receivedMessage = await SR.ReadLineAsync();
                     if (string.IsNullOrEmpty(receivedMessage)) continue;
 
-                    HandleMessage(receivedMessage);
+                    await HandleMessage(receivedMessage);
                 }
             }
             catch (Exception e)
@@ -105,82 +120,99 @@ namespace SupremePlayServer
             }
             finally
             {
-                CloseClient();
+                await CloseClientAsync();
             }
         }
 
 
-
-        private void HandleMessage(string message)
+        private async Task HandleMessage(string message)
         {
-            string[] flag = { ">" };
-            String[] d1 = message.Split(flag, StringSplitOptions.RemoveEmptyEntries);
-            if (d1.Length <= 1) return;
+            if (message.Length < 3 || message[0] != '<') return;
 
-            string tag = d1[0].Substring(1);
+            int endOfTag = message.IndexOf('>');
+            if (endOfTag < 0) return;
+
+            string tag = message.Substring(1, endOfTag - 1);
             string body = splitTag(tag, message);
 
             // 로그에 메시지 저장
             if (!string.IsNullOrEmpty(userName))
             {
-                if (systemData.logMessageDict.ContainsKey($"<{tag}>")) 
-                    mainForm.write_log_user(userName, message);
+                if (systemData.logMessageDict.ContainsKey($"<{tag}>"))
+                {
+                    string log_file_name = "default";
+                    if (!string.IsNullOrEmpty(systemData.logMessageDict[$"<{tag}>"]))
+                        log_file_name = systemData.logMessageDict[$"<{tag}>"];
+                    await Task.Run(() => mainForm.write_log_user(userName, message, log_file_name));
+                }
             }
 
-            switch(tag)
+            switch (tag)
             {
+                case "important_log":
+                    HandleImportantLog(body);
+                    break;
+
                 case "0":
-                    SendMessageWithTag("0", userCode + " 'e' n=Suprememay Server");
+                    await SendMessageWithTagAsync("0", userCode + " 'e' n=Suprememay Server");
                     break;
                 case "login":
-                    HandleLogin(tag, body);
+                    await HandleLoginAsync(tag, body);
                     break;
                 case "regist":
-                    systemDB.Registeration(this, tag, body);
+                    await systemDB.RegisterationAsync(this, tag, body);
                     break;
                 case "versione":
-                    HandleVersionCheck(tag, body);
+                    await HandleVersionCheck(tag, body);
                     break;
                 case "2":
-                    SendMessageWithTag(tag, userId);
+                    await SendMessageWithTagAsync(tag, userId);
                     break;
                 case "check":
-                    SendMessageWithTag(tag, "standard");
+                    await SendMessageWithTagAsync(tag, "standard");
                     break;
                 case "timer_v":
                     if (body == "ok") isVersionValid = true;
                     break;
                 case "userdata":
-                    systemDB.SaveData2(body, userId);
+                    await systemDB.SaveData2Async(body, this);
                     break;
 
                 case "exp_event":
-                    HandleEvent(tag, body);
-                    break;
                 case "drop_event":
-                    HandleEvent(tag, body);
-                    break;
                 case "exp_event_change":
-                    HandleEvent(tag, body);
-                    break;
                 case "drop_event_change":
-                    HandleEvent(tag, body);
+                    await HandleEventAsync(tag, body);
                     break;
 
                 case "5":
-                    mainForm.Packet("5", userCode + ","+ body, userCode);
+                    await mainForm.Packet("5", userCode + ","+ body, userCode);
                     break;
                 case "m5":
-                    mainForm.Map_Packet("5", userCode + "," + body, lastMapId, userCode);
+                    await mainForm.Map_Packet("5", userCode + "," + body, lastMapId, userCode);
                     break;
 
+                case "aggro":
+                    {
+                        string[] d = body.Split(',');
+                        int id = int.Parse(d[0]);
+                        string name = d[1];
 
+                        if (systemData.monster_data.ContainsKey(lastMapId) && systemData.monster_data[lastMapId].ContainsKey(id))
+                        {
+                            var monster = systemData.monster_data[lastMapId][id];
+                            monster.aggroTime = monster.aggroResetTime;
+                            await mainForm.Map_Packet("aggro", $"{id},{name}", lastMapId, userCode);
+                        }
+                        break;
+                    }
+                    
                 case "give_admin":
                     {
                         UserThread target = mainForm.findMember(body);
                         if (target == null) return;
 
-                        target.SendMessageWithTag(tag, body);
+                        await target.SendMessageWithTagAsync(tag, body);
                         break;
                     }
                 case "remove_admin":
@@ -188,23 +220,48 @@ namespace SupremePlayServer
                         UserThread target = mainForm.findMember(body);
                         if (target == null) return;
 
-                        target.SendMessageWithTag(tag, body);
+                        await target.SendMessageWithTagAsync(tag, body);
                         break;
                     }
+                case "stealth":
+                    {
+                        if(body.Equals("1")) player.stealth = true;
+                        else player.stealth = false;
+                        break;
+                    }
+
+                case "check_in_map_player":
+                    {
+                        int map_id = int.Parse(body);
+                        bool check = (mainForm.countMapUser(map_id) > 0);
+                        await SendMessageWithTagAsync(tag, check ? "1" : "0");
+                        break;
+                    }
+                    
+
+
                 case "dtloadreq":
-                    systemDB.SendData(this, userId);
+                    await systemDB.SendDataAsync(this, userId);
                     break;
                 case "monster_save":
                     systemData.SaveMonster(body);
-                    mainForm.Map_Packet(tag, body, lastMapId, userCode);
+                    await mainForm.Map_Packet(tag, body, lastMapId, userCode);
                     break;
                 case "enemy_dead":
                     systemData.DeleteMonster(body, lastMapId);
-                    mainForm.Map_Packet(tag, body, lastMapId, userCode);
+                    await mainForm.Map_Packet(tag, body, lastMapId, userCode);
                     break;
-                case "req_monster":
-                    HandleReqMonster(tag, body);
+                
+                case "npc_create":
+                    systemData.SaveNpc(body);
+                    await mainForm.Map_Packet(tag, body, lastMapId, userCode);
                     break;
+                case "npc_delete":
+                    systemData.DeleteNpc(body);
+                    await mainForm.Map_Packet(tag, body, lastMapId, userCode);
+                    break;
+                
+
                 case "attack_effect":
                     {
                         string[] temp = { "," };
@@ -212,7 +269,7 @@ namespace SupremePlayServer
                         string target = data[0];
 
                         if (!mainForm.UserByNameDict.ContainsKey(target)) return;
-                        mainForm.UserByNameDict[target].SendMessageWithTag(tag, userCode);
+                        await mainForm.UserByNameDict[target].SendMessageWithTagAsync(tag, userCode);
                         break;
                     }
                 case "skill_effect":
@@ -223,7 +280,7 @@ namespace SupremePlayServer
                         string skill_id = data[1];
 
                         if (!mainForm.UserByNameDict.ContainsKey(target)) return;
-                        mainForm.UserByNameDict[target].SendMessageWithTag(tag, userCode + "," + skill_id);
+                        await mainForm.UserByNameDict[target].SendMessageWithTagAsync(tag, userCode + "," + skill_id);
                         break;
                     }
                 case "e_skill_effect":
@@ -235,7 +292,7 @@ namespace SupremePlayServer
                         string enemy_id = data2[1];
                         string skill_id = data2[2];
                         if (!mainForm.UserByNameDict.ContainsKey(target)) return;
-                        mainForm.UserByNameDict[target].SendMessageWithTag(tag, enemy_id + "," + skill_id);
+                        await mainForm.UserByNameDict[target].SendMessageWithTagAsync(tag, enemy_id + "," + skill_id);
                     }
                     break;
                 case "post":
@@ -243,36 +300,18 @@ namespace SupremePlayServer
                         Dictionary<string, string> dict = ParseKeyValueData(body);
                         string target = dict["target_name"];
                         if (!mainForm.UserByNameDict.ContainsKey(target)) return;
-                        mainForm.UserByNameDict[target].SendMessageWithTag(tag, body);
+                        await mainForm.UserByNameDict[target].SendMessageWithTagAsync(tag, body);
                     }
                     break;
                 case "Drop":
                     systemData.SaveItem(body);
-                    mainForm.Map_Packet(tag, body, lastMapId);
+                    await mainForm.Map_Packet(tag, body, lastMapId);
                     break;
                 case "Drop_Get":
                     systemData.DelItem2(body, lastMapId);
-                    mainForm.Map_Packet(tag, body, lastMapId);
+                    await mainForm.Map_Packet(tag, body, lastMapId);
                     break;
-                case "req_item":
-                    {
-                        if (!systemData.item_data2.ContainsKey(lastMapId)) return;
-                        List<Item> dat = systemData.item_data2[lastMapId];
-                        string msg2 = "";
-                        foreach (var d in dat)
-                        {
-                            // 객체의 타입을 가져옴
-                            Type type = d.GetType();
-
-                            foreach (var field in type.GetFields())
-                            {
-                                object value = field.GetValue(d); // 필드의 값 가져오기
-                                msg2 += $"{field.Name}:{value}|";
-                            }
-                            SendMessageWithTag("Drop", msg2);
-                        }
-                    }
-                    break;
+                
                 case "item_summon":
                     {
                         string[] temp = { "," };
@@ -283,79 +322,90 @@ namespace SupremePlayServer
                         string y = data2[2];
 
                         if (!mainForm.UserByNameDict.ContainsKey(target)) return;
-                        mainForm.UserByNameDict[target].SendMessageWithTag(tag, x + "," + y);
+                        await mainForm.UserByNameDict[target].SendMessageWithTagAsync(tag, x + "," + y);
                     }
                     break;
                 case "map_name":
                     {
-                        systemDB.SaveMap(message);
+                        await systemDB.SaveMapAsync(message);
                         string[] temp = { "," };
                         String[] data2 = body.Split(temp, StringSplitOptions.RemoveEmptyEntries);
 
                         mapName = data2[1];
                         int new_id = int.Parse(data2[0]);
-                        mainForm.editUserMap(this, new_id);
+                        await mainForm.editUserMapAsync(this, new_id);
                         lastMapId = new_id;
+
+                        await HandleReqMonsterAsync(); // 몬스터 데이터 보내기
+                        await HandleItemsAsync();// 아이템 데이터 보내기
+                        await HandleReqNpcAsync();// npc 데이터 보내기
                     }
                     break;
                 case "9":
-                    CloseClient(true);
+                    await CloseClientAsync(true);
                     break;
 
                 // 교환 관련
                 case "trade_invite":
-                    tradeManager.inviteTrade(body);
+                    await tradeManager.InviteTradeAsync(body);
                     break;
                 case "trade_addItem":
-                    tradeManager.addItem(ParseKeyValueData(body));
-                    break;
+                    {
+                        bool check = await tradeManager.AddItemAsync(ParseKeyValueData(body));
+                        await SendMessageWithTagAsync("trade_addItem", check ? "1" : "0");
+                        if (check) await tradeManager.AddItemToTraderAsync();
+                        break;
+                    }
                 case "trade_removeItem":
-                    tradeManager.removeItem(int.Parse(body));
+                    await tradeManager.RemoveItemAsync(int.Parse(body));
                     break;
                 case "trade_ready":
-                    tradeManager.readyTrade();
+                    await tradeManager.ReadyTradeAsync();
                     break;
                 case "trade_cancel":
-                    tradeManager.cancelTrade();
+                    await tradeManager.CancelTradeAsync();
                     break;
                 case "trade_accept":
-                    tradeManager.acceptTrade();
+                    await tradeManager.AcceptTradeAsync();
                     break;
                 case "trade_refuse":
-                    tradeManager.refuseTrade();
+                    await tradeManager.RefuseTradeAsync();
                     break;
 
                 // 파티 관련
                 case "party_create":
-                    partyManger.createParty();
+                    await partyManger.CreatePartyAsync();
                     break;
 
                 case "party_end":
-                    partyManger.endParty();
+                    await partyManger.EndPartyAsync();
                     break;
 
                 case "party_invite":
                     {
                         Dictionary<string, string> dict = ParseKeyValueData(body);
                         string target = dict["target"];
-                        partyManger.inviteParty(target);
+                        await partyManger.InvitePartyAsync(target);
                     }
                     break;
 
                 case "party_accept":
-                    partyManger.acceptParty();
+                    await partyManger.AcceptPartyAsync();
                     break;
 
                 case "party_refuse":
-                    partyManger.refuseParty();
+                    await partyManger.RefusePartyAsync();
                     break;
 
                 case "party_switch":
                     {
                         // 스위치 id, 스위치 상태, 맵 id
-                        string[] temp = { "," };
-                        String[] data2 = body.Split(temp, StringSplitOptions.RemoveEmptyEntries);
-                        mainForm.switch_send(data2[0], data2[1], int.Parse(data2[2]));
+                        //string msg = string.Join(",", data);
+                        await SendMessageWithTagAsync(tag, body); // 자신한테 보냄
+                        await SendMessageToPartyMembersAsync(
+                            (member) => (member.lastMapId == this.lastMapId) && (member != this),
+                            (member) => member.SendMessageWithTagAsync(tag, body)
+                            );
                     }
                     break;
                 case "party_quest_check":
@@ -366,14 +416,14 @@ namespace SupremePlayServer
                         int[] check = systemData.checkPartyQuest(map_id);
                         if (check[0] == 0) return;
 
-                        SendMessageWithTag(tag, check[0] + "," + check[1]);
+                        await SendMessageWithTagAsync(tag, check[0] + "," + check[1]);
                     }
                     break;
                 case "party_move":
                     {
-                        SendMessageToPartyMembers(
+                        await SendMessageToPartyMembersAsync(
                             (member) => member.lastMapId == this.lastMapId,
-                            (member) => member.SendMessageWithTag(tag, body)
+                            (member) => member.SendMessageWithTagAsync(tag, body)
                             ); 
                     }
                     break;
@@ -384,9 +434,9 @@ namespace SupremePlayServer
                         string text = dict["text"];
                         string msg = $"(파티) {userName}({className}) : {text}";
 
-                        SendMessageToPartyMembers(
+                        await SendMessageToPartyMembersAsync(
                             (member) => true,
-                            (member) => member.SendMessageWithTag(tag, msg)
+                            (member) => member.SendMessageWithTagAsync(tag, msg)
                             );
                     }
                     break;
@@ -397,23 +447,23 @@ namespace SupremePlayServer
                         string value = dict["value"];
                         string msg = $"{userName} {id} {value}";
 
-                        SendMessageToPartyMembers(
+                        await SendMessageToPartyMembersAsync(
                             (member) => !member.Equals(this) && (member.lastMapId == this.lastMapId),
-                            (member) => member.SendMessageWithTag(tag, msg)
+                            (member) => member.SendMessageWithTagAsync(tag, msg)
                             );
                     }
                     break;
 
                 case "party_gain":
-                    SendMessageToPartyMembers(
+                    await SendMessageToPartyMembersAsync(
                            (member) => !member.Equals(this) && (member.lastMapId == this.lastMapId),
-                           (member) => member.SendMessageWithTag(tag, body)
+                           (member) => member.SendMessageWithTagAsync(tag, body)
                            );
                     break;
 
 
                 case "ship_time_check":
-                    SendMessageWithTag(tag, mainForm.now_ship_target().ToString());
+                    await SendMessageWithTagAsync(tag, mainForm.now_ship_target().ToString());
                     break;
                 case "monster_cooltime_reset":
                     {
@@ -438,134 +488,184 @@ namespace SupremePlayServer
 
                         if (!mainForm.UserByNameDict.ContainsKey(target))
                         {
-                            SendMessageWithTag(tag, "귓속말 할 상대가 없습니다.");
+                            await SendMessageWithTagAsync(tag, "귓속말 할 상대가 없습니다.");
                             return;
                         }
 
                         string msg = $"(귓속말) {userName} : {ms}";
 
-                        mainForm.UserByNameDict[target].SendMessageWithTag(tag, msg);
+                        await mainForm.UserByNameDict[target].SendMessageWithTagAsync(tag, msg);
                         ms = $"{userName}->{target}:{ms}";
                         mainForm.write_log(ms);
                     }
                     break;
-               
-                default:
-                    {
-                        string check = "<" + tag + ">";
-                        if (systemData.packetMessageDict.ContainsKey(check))
-                        {
-                            if (systemData.packetMessageDict[check] == 0) mainForm.Packet(tag, body, userCode);
-                            else mainForm.Packet(tag, body);
-                        }
-                        else if (systemData.mapPacketMessageDict.ContainsKey(check))
-                        {
-                            if(systemData.mapPacketMessageDict[check] == 0) mainForm.Map_Packet(tag, body, lastMapId, userCode);
-                            else mainForm.Map_Packet(tag, body, lastMapId);
-                        }
-                    }
-                    break;
+                default: await HandleDefaultAsync(tag, body); break;
+            }
+        }
+        private async Task HandleDefaultAsync(string tag, string body)
+        {
+            string check = "<" + tag + ">";
+            if (systemData.packetMessageDict.TryGetValue(check, out int packetValue))
+            {
+                if (packetValue == 0)
+                    await mainForm.Packet(tag, body, userCode);
+                else
+                    await mainForm.Packet(tag, body);
+            }
+            else if (systemData.mapPacketMessageDict.TryGetValue(check, out int mapPacketValue))
+            {
+                if (mapPacketValue == 0)
+                    await mainForm.Map_Packet(tag, body, lastMapId, userCode);
+                else
+                    await mainForm.Map_Packet(tag, body, lastMapId);
             }
         }
 
-        private void HandleLogin(string tag, string body)
+        private async void HandleImportantLog(string body)
         {
-            string loginResult = systemDB.Login(body);
+            var data = ParseKeyValueData(body);
+            var file_name = data["tag"];
+            var msg = data["body"];
+            await Task.Run(() => mainForm.write_log_user(userName, msg, file_name));
+        }
+
+        private async Task HandleLoginAsync(string tag, string body)
+        {
+            string loginResult = await systemDB.LoginAsync(body);
             string[] loginData = loginResult.Split(',');
             int resultCode = int.Parse(loginData[2]);
 
             bool isDuplicate = mainForm.Checkid(loginData[1]);
-            
+
             if (isDuplicate)
             {
-                SendMessageWithTag(tag, "al,1"); // Already logged in
+                await SendMessageWithTagAsync(tag, "al,1"); // Already logged in
                 return;
             }
-            
-            if (resultCode == 0) SendMessageWithTag(tag, "wu,1"); // Wrong username
-            else if (resultCode == 1) SendMessageWithTag(tag, "wp,1"); // Wrong password
-            else if (resultCode == 2) CompleteLogin(loginData);
+
+            if (resultCode == 0) await SendMessageWithTagAsync(tag, "wu,1"); // Wrong username
+            else if (resultCode == 1) await SendMessageWithTagAsync(tag, "wp,1"); // Wrong password
+            else if (resultCode == 2) await CompleteLoginAsync(loginData);
         }
 
-        private void CompleteLogin(string[] loginData)
+        private async Task CompleteLoginAsync(string[] loginData)
         {
             if (mainForm.UserByNameDict.Count > mainForm.max_user_name)
             {
-                SendMessageWithTag("over", "서버 유저 수 제한입니다. 다음에 시도해주세요.");
+                await SendMessageWithTagAsync("over", "서버 유저 수 제한입니다. 다음에 시도해주세요.");
+                return;
+            }
+
+            if (mainForm.IsIPBanned(ipAddress))
+            {
+                await SendMessageWithTagAsync("over", "현재 차단된 IP입니다.");
                 return;
             }
 
             userName = loginData[0];
             userId = loginData[1];
             mainForm.UserByNameDict[userName] = this;
-            
-            SendMessageWithTag("login", "allow," + userName);
-            SendMessageWithTag("server_msg", "흑부엉의 바람의나라에 오신 것을 환영합니다.");
-            if(mainForm.isTest) SendMessageWithTag("server_msg", "현재 테스트 서버입니다.");
+
+            await systemDB.SaveLoginDate(userId);
+            await SendMessageWithTagAsync("login", "allow," + userName);
+            await SendMessageWithTagAsync("server_msg", "흑부엉의 바람의나라에 오신 것을 환영합니다.");
+            if (mainForm.isTest) await SendMessageWithTagAsync("server_msg", "현재 테스트 서버입니다.");
         }
 
-        private void HandleVersionCheck(string tag, string body)
+        private async Task HandleVersionCheck(string tag, string body)
         {
             if (body != mainForm.version)
             {
-                SendMessageWithTag("over", "버전이 다릅니다.");
+                await SendMessageWithTagAsync("over", "버전이 다릅니다.");
             }
             else
             {
                 mainForm.write_log("카운트다운 시작");
                 versionCheckTimer.Start();
-                SendMessageWithTag(tag, mainForm.version); // 5초 내에 응답하지 않으면 퇴출
-                SendMessageWithTag("timer_v", "");
+                await SendMessageWithTagAsync(tag, mainForm.version); // 5초 내에 응답하지 않으면 퇴출
+                await SendMessageWithTagAsync("timer_v", "");
             }
         }
 
-        private void HandleEvent(string tag, string body)
+        private async Task HandleEventAsync(string tag, string body)
         {
             double num;
             switch (tag)
             {
                 case "exp_event":
-                    if (mainForm.exe_event > 0) SendMessageWithTag(tag, mainForm.exe_event.ToString());
+                    if (mainForm.exe_event > 0) await SendMessageWithTagAsync(tag, mainForm.exe_event.ToString());
                     break;
                 case "drop_event":
-                    if (mainForm.drop_event > 0) SendMessageWithTag(tag, mainForm.drop_event.ToString());
+                    if (mainForm.drop_event > 0) await SendMessageWithTagAsync(tag, mainForm.drop_event.ToString());
                     break;
                 case "exp_event_change":
                     if (double.TryParse(body, out num))
-                        mainForm.exe_event_send(num);
+                        await mainForm.exe_event_sendAsync(num);
                     break;
                 case "drop_event_change":
                     if (double.TryParse(body, out num))
-                        mainForm.drop_event_send(num);
+                        await mainForm.drop_event_sendAsync(num);
                     break;
             }
         }
-        
-        private void HandleReqMonster(string tag, string body)
+
+        private async Task HandleReqMonsterAsync()
         {
-            if (!systemData.monster_data.ContainsKey(lastMapId))
+            if (systemData.party_quest_map_id.ContainsKey(lastMapId)) return; // No need to send monsters for party quest maps
+
+            string tag = "req_monster";
+            if (systemData.monster_data.ContainsKey(lastMapId))
             {
-                SendMessageWithTag(tag, $"map_id:{lastMapId}");
-                return;
+                await SendDataWithTagAsync(systemData.monster_data[lastMapId].Values, tag); // Use await to ensure data is sent asynchronously
             }
-
-            var da = systemData.monster_data[lastMapId].Values;
-            string msg = "";
-            foreach (var d in da)
+            else
             {
-                // 객체의 타입을 가져옴
-                Type type = d.GetType();
-
-                foreach (var field in type.GetFields())
-                {
-                    object value = field.GetValue(d); // 필드의 값 가져오기
-                    msg += $"{field.Name}:{value}|";
-                }
-                SendMessageWithTag(tag, msg);
+                await SendMessageWithTagAsync(tag, $"map_id:{lastMapId}");
             }
         }
 
-        public void SendMessageWithTag(string tag, string body = "")
+        private async Task HandleItemsAsync()
+        {
+            string tag = "Drop";
+            if (systemData.item_data2.ContainsKey(lastMapId))
+            {
+                await SendDataWithTagAsync(systemData.item_data2[lastMapId], tag); // Use await to ensure all items are sent asynchronously
+            }
+        }
+
+        private async Task HandleReqNpcAsync()
+        {
+            string tag = "npc_create";
+            if (systemData.npc_data.ContainsKey(lastMapId))
+            {
+                await SendDataWithTagAsync(systemData.npc_data[lastMapId].Values, tag); // Use await to ensure NPCs are sent asynchronously
+            }
+        }
+
+        private async Task SendDataWithTagAsync<T>(IEnumerable<T> data, string tag)
+        {
+            foreach (var item in data)
+            {
+                string msg = ConvertObjectToMessage(item);
+                await SendMessageWithTagAsync(tag, msg); // Await each message being sent
+            }
+        }
+
+        private string ConvertObjectToMessage(object obj)
+        {
+            Type type = obj.GetType();
+            var msgBuilder = new StringBuilder();
+
+            foreach (var field in type.GetFields())
+            {
+                object value = field.GetValue(obj);
+                msgBuilder.Append($"{field.Name}:{value}|");
+            }
+
+            return msgBuilder.ToString();
+        }
+
+        public async Task SendMessageWithTagAsync(string tag, string body = "")
         {
             // SW가 null이거나, 스트림이 닫혀 있으면 메시지를 보내지 않음
             if (this.SW == null || !this.SW.BaseStream.CanWrite)
@@ -580,16 +680,17 @@ namespace SupremePlayServer
             string endTag = "</" + tag + ">";
             string message = startTag + body + endTag;
 
-            this.SW.WriteLine(message);
-            this.SW.Flush();
+            await this.SW.WriteLineAsync(message); // 비동기식으로 메시지 쓰기
+            await this.SW.FlushAsync(); // 비동기식으로 플러시
         }
 
-        public void SendConsoleMessage(string body)
+        public async Task SendConsoleMessageAsync(string body)
         {
-            SendMessageWithTag("console_msg", body);
+            await SendMessageWithTagAsync("console_msg", body);
         }
 
-        private void SendMessageToPartyMembers(Func<UserThread, bool> condition, Action<UserThread> action)
+        
+        private async Task SendMessageToPartyMembersAsync(Func<UserThread, bool> condition, Func<UserThread, Task> action)
         {
             foreach (var member in partyManger.partyMembers)
             {
@@ -597,39 +698,31 @@ namespace SupremePlayServer
 
                 if (condition(member))
                 {
-                    action(member);
+                    await action(member); // Await the action performed for each member
                 }
             }
         }
 
-
-        public void CloseClient(bool closeSwitch = false)
+        public async Task CloseClientAsync(bool closeSwitch = false)
         {
             try
             {
-                lock (this)
+                if (client.Connected && !closeSwitch)
                 {
-                    if (client.Connected && !closeSwitch)
-                    {
-                        NetListener();
-                        return;
-                    }
+                    return;
+                }
 
-                    mainForm.removethread(this);
-                    userCode = "*null*";
+                if (userCode != "close") // Ensure the user isn't already closed
+                {
+                    await mainForm.removethread(this); // Remove thread safely
+                }
+                userCode = "close";
 
-                    // 스트림과 네트워크 리소스를 올바른 순서로 해제
-                    NS?.Dispose(); // NetworkStream을 먼저 닫습니다.
-                    SW?.Dispose(); // StreamWriter와 StreamReader는 NetworkStream에 종속될 수 있습니다.
-                    SR?.Dispose();
-                    client?.Close();  // IDisposable이 아닌 경우에도 처리
-
-                    // 스레드 조인 (메인 UI 스레드에서 호출될 경우 주의)
-                    if (thread?.IsAlive == true)
-                    {
-                        thread?.Join(); // 스레드가 종료될 때까지 대기
-                    }
-                }                    
+                // Close streams and network resources asynchronously
+                SW?.Close();
+                SR?.Close();
+                NS?.Close();
+                client?.Close();
             }
             catch (Exception ex)
             {

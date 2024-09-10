@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SupremePlayServer
 {
-    public class Monster
+    public class Player
     {
         public int map_id;
         public int id;
@@ -16,16 +16,12 @@ namespace SupremePlayServer
         public int sp;
         public int direction;
 
-        public int respawn;
-        public int respawn_save;
         public bool dead;
-        public int mon_id;
-        public bool delete_sw;
         public Dictionary<int, int> buffTime;
-        public int aggroTime;
-        public int aggroResetTime;
+        public bool stealth; // 잠행인가
 
-        public Monster()
+
+        public Player()
         {
             map_id = 0;
             id = 0;
@@ -34,13 +30,15 @@ namespace SupremePlayServer
             hp = 0;
             sp = 0;
             direction = 0;
-            respawn = 0;
-            respawn_save = 0;
             dead = false;
-            delete_sw = false;
             buffTime = new Dictionary<int, int>();
-            aggroResetTime = 10;
-            aggroTime = aggroResetTime;
+            stealth = false;
+        }
+
+        public bool isAggroFree()
+        {
+            if (stealth) return true;
+            return false;
         }
     }
 }
